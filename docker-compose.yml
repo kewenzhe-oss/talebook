@@ -1,0 +1,50 @@
+version: "2.4"
+
+services:
+
+  # main service
+  talebook:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production-ssr
+    volumes:
+      - ./talebook_data:/data
+    # Port 80 is only exposed to the Docker network (nginx proxy).
+    # Remove host port bindings since external access goes through cloudflared → nginx.
+    expose:
+      - "80"
+    environment:
+      # 如果需要上传ssl证书，请将PUID与PGID设置为0（root用户）
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Shanghai
+    depends_on:
+      - douban-rs-api
+
+  # optional, for meta plugins
+  # please set "http://douban-rs-api" in settings
+  douban-rs-api:
+    restart: always
+    image: ghcr.io/cxfksword/douban-api-rs
+
+  # Nginx reverse proxy — buffers Tornado responses for slow clients
+  nginx:
+    image: nginx:alpine
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./talebook_data:/data:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - talebook
+
+  # Cloudflare Tunnel — exposes talebook to the internet (via nginx)
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --protocol http2 --no-autoupdate run --token eyJhIjoiY2Y1MDA0OTk5NDZjNzRhZDNmZWI2NDM1MGQxMzJjNmEiLCJ0IjoiYTY0OGViYzYtY2Q5Ny00Zjc4LTkxMGQtOWI1OGEyNGE0NmQ1IiwicyI6Ik16UTROelF3TURNdFpqTXlaaTAwWldJMkxUa3daVEF0TUdaaE1UZG1aamt4TVdRNCJ9
+    depends_on:
+      - nginx
