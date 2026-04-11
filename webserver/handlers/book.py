@@ -43,8 +43,29 @@ class Index(BaseHandler):
             recent_books = [self.fmt(b) for b in self.get_books(ids=new_ids)]
             recent_books.sort(key=lambda x: x["id"], reverse=True)
 
+        # Continue Reading: de-duplicated, most-recent-first (supplement C)
+        continue_reading = []
+        if self.current_user and self.current_user.extra:
+            history = self.current_user.extra.get("read_history", [])
+            seen_ids = set()
+            deduped = []
+            for entry in history:
+                bid = entry.get("id")
+                if bid and bid not in seen_ids:
+                    seen_ids.add(bid)
+                    deduped.append(entry)
+                if len(deduped) >= 5:
+                    break
+            if deduped:
+                cr_ids = [e["id"] for e in deduped]
+                cr_books = self.get_books(ids=cr_ids)
+                # Preserve read-history order (most recent first)
+                cr_map = {b["id"]: self.fmt(b) for b in cr_books}
+                continue_reading = [cr_map[bid] for bid in cr_ids if bid in cr_map]
+
         return {
             "recent_books": recent_books,
+            "continue_reading": continue_reading,
         }
 
 
@@ -633,7 +654,7 @@ class LibraryBook(ListHandler):
 class SearchBook(ListHandler):
     @js
     def get(self):
-        name = self.get_argument("name", "")
+        name = self.get_argument("name", "") or self.get_argument("title", "")
         if not name.strip():
             return {"err": "params.invalid", "msg": _("请输入搜索关键字")}
 

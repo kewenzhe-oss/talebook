@@ -19,33 +19,31 @@ test.describe('Homepage', () => {
         expect(response.ok()).toBeTruthy();
     });
 
-    // No page.route here, relying on real mock server
-
-    test('displays random and recent books', async ({ page }) => {
+    test('displays hero search and recent books', async ({ page }) => {
         await page.goto('/');
 
-        // Check headers
-        await expect(page.getByText('随便推荐')).toBeVisible();
-        await expect(page.getByText('新书推荐')).toBeVisible();
-        await expect(page.getByText('分类浏览').first()).toBeVisible();
+        // Check Hero Search area
+        await expect(page.getByText('探索您的数字书房')).toBeVisible();
+        await expect(page.locator('input[type="text"]').first()).toBeVisible();
 
-        // Check navigation links
-        await expect(page.getByText('分类导览').first()).toBeVisible();
-        await expect(page.getByText('作者').first()).toBeVisible();
-        await expect(page.getByText('出版社').first()).toBeVisible();
+        // Check "最近入库" section
+        await expect(page.getByText('最近入库')).toBeVisible();
 
-        // Check if at least one book from random books is visible
-        if (apiIndex.random_books.length > 0) {
-            const firstBook = apiIndex.random_books[0];
-            // We can check if there are links to the books.
-            await expect(page.locator(`a[href^="/book/${firstBook.id}"]`).first()).toBeVisible();
+        // Check if at least one book from recent books is visible
+        if (apiIndex.recent_books && apiIndex.recent_books.length > 0) {
+            const firstBook = apiIndex.recent_books[0];
+            await expect(page.getByText(firstBook.title).first()).toBeVisible();
         }
+    });
 
-        // Check if at least one book from new books is visible
-        if (apiIndex.new_books.length > 0) {
-            const firstNewBook = apiIndex.new_books[0];
-            // Recent books use BookCards component, which likely displays titles.
-            await expect(page.getByText(firstNewBook.title).first()).toBeVisible();
-        }
+    test('hero search navigates to search page', async ({ page }) => {
+        await page.goto('/');
+
+        const searchInput = page.locator('input[type="text"]').first();
+        await searchInput.fill('百年孤独');
+        await searchInput.press('Enter');
+
+        // Should navigate to /search?name=百年孤独
+        await expect(page).toHaveURL(/\/search\?name=/);
     });
 });

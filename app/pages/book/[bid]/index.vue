@@ -248,10 +248,10 @@
                             target="_blank"
                             rel="noopener noreferrer"
                             rounded="pill"
-                            title="下载文件后，在NotebookLM上传进行AI阅读分析"
+                            :title="`下载《${book.title}》后，上传至 NotebookLM 进行 AI 深度分析`"
                         >
                             <v-icon start>mdi-robot-outline</v-icon>
-                            AI 深度解析
+                            导出并开始 AI 深读
                         </v-btn>
 
                         <!-- Primary 3 [常规下载]: 常规打包下载 -->
@@ -302,6 +302,37 @@
                             </v-menu>
                         </template>
                     </v-toolbar>
+
+                    <!-- AI Deep-Read Guidance -->
+                    <v-expand-transition>
+                        <v-alert
+                            v-if="book.title"
+                            type="info"
+                            variant="tonal"
+                            density="compact"
+                            class="mx-4 mt-3 mb-0 rounded-lg"
+                            icon="mdi-lightbulb-outline"
+                            closable
+                        >
+                            <div class="text-body-2 mb-2">
+                                下载书籍文件后，上传至
+                                <a href="https://notebooklm.google.com" target="_blank" rel="noopener noreferrer" class="font-weight-bold">NotebookLM</a>
+                                即可开始 AI 深度分析。试试这些提问：
+                            </div>
+                            <div class="d-flex flex-wrap ga-2">
+                                <v-chip size="small" variant="outlined" color="primary" prepend-icon="mdi-chat-question-outline">
+                                    《{{ book.title }}》的核心论点是什么？
+                                </v-chip>
+                                <v-chip size="small" variant="outlined" color="primary" prepend-icon="mdi-chat-question-outline">
+                                    用 3 分钟总结《{{ book.title }}》的要点
+                                </v-chip>
+                                <v-chip size="small" variant="outlined" color="primary" prepend-icon="mdi-chat-question-outline">
+                                    《{{ book.title }}》对我的工作有什么启发？
+                                </v-chip>
+                            </div>
+                        </v-alert>
+                    </v-expand-transition>
+
                     <v-row>
                         <v-col
                             class="mx-auto"

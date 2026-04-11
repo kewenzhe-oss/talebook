@@ -19,7 +19,20 @@
             </v-col>
         </v-row>
 
-        <!-- Continue Reading / Recent Books -->
+        <!-- Continue Reading -->
+        <v-row v-if="continue_reading && continue_reading.length > 0" class="mb-8">
+            <v-col cols="12">
+                <div class="d-flex align-center justify-space-between mb-4">
+                    <h2 class="text-h5 font-weight-bold ma-0">
+                        <v-icon class="mr-2" color="primary">mdi-book-open-variant</v-icon>
+                        继续阅读
+                    </h2>
+                </div>
+                <BookCards :books="continue_reading" />
+            </v-col>
+        </v-row>
+
+        <!-- Recent Books -->
         <v-row v-if="get_recent_books && get_recent_books.length > 0" class="mb-8">
             <v-col cols="12">
                 <div class="d-flex align-center justify-space-between mb-4">
@@ -35,7 +48,7 @@
                 <h2 class="text-h5 font-weight-bold ma-0 mb-4">精选分类馆</h2>
             </v-col>
             <v-col cols="12" sm="4" md="3" v-for="cat in categories.slice(0, 8)" :key="cat.id">
-                <v-card :color="cat.color || 'primary'" variant="flat" :to="'/subject/' + cat.name" class="text-center pa-6 transition-swing rounded-xl" hover>
+                <v-card :color="cat.color || 'primary'" variant="flat" :to="'/subject/' + encodeURIComponent(cat.id)" class="text-center pa-6 transition-swing rounded-xl" hover>
                     <v-icon size="48" class="mb-3 text-white">{{ cat.icon || 'mdi-folder' }}</v-icon>
                     <div class="text-h6 font-weight-bold text-white">{{ cat.name }}</div>
                 </v-card>
@@ -78,6 +91,14 @@ const get_recent_books = computed(() => {
     }));
 });
 
+const continue_reading = computed(() => {
+    const books = indexData.value?.continue_reading || [];
+    return books.map(b => ({
+        ...b,
+        href: '/book/' + b.id
+    }));
+});
+
 const categories = computed(() => {
     // Return dynamically configured categories, ensuring they are enabled
     const cats = navData.value?.categories || [];
@@ -86,7 +107,7 @@ const categories = computed(() => {
 
 function doSearch() {
     if (searchQuery.value && searchQuery.value.trim()) {
-        router.push({ path: '/search', query: { title: searchQuery.value.trim() } });
+        router.push({ path: '/search', query: { name: searchQuery.value.trim() } });
     }
 }
 </script>

@@ -2,7 +2,32 @@
     <div>
         <v-row>
             <v-col cols="12">
-                <h2>{{ title }}</h2>
+                <div class="d-flex align-center justify-space-between">
+                    <h2>{{ title }}</h2>
+                    <div class="d-flex align-center ga-3">
+                        <v-btn
+                            variant="tonal"
+                            color="primary"
+                            size="small"
+                            prepend-icon="mdi-view-grid"
+                            to="/nav"
+                        >
+                            按分类找书
+                        </v-btn>
+                        <v-select
+                            v-model="sortBy"
+                            :items="sortOptions"
+                            item-title="text"
+                            item-value="value"
+                            variant="outlined"
+                            density="compact"
+                            hide-details
+                            style="max-width: 160px"
+                            prepend-inner-icon="mdi-sort"
+                            @update:model-value="onSortChange"
+                        />
+                    </div>
+                </div>
                 <v-divider class="mt-3 mb-0" />
             </v-col>
 
@@ -251,6 +276,13 @@ const filters = ref({
     format: t('messages.all')
 });
 
+const sortBy = ref('timestamp');
+const sortOptions = [
+    { text: '最新入库', value: 'timestamp' },
+    { text: '评分最高', value: 'rating' },
+    { text: '书名 A-Z', value: 'title' },
+];
+
 const filterOptions = ref({
     publisher: [],
     author: [],
@@ -275,7 +307,8 @@ const fetchBooks = async (p = 1) => {
     // 构建查询参数
     const query = {
         start: (p - 1) * page_size,
-        size: page_size
+        size: page_size,
+        sort: sortBy.value
     };
   
     // 添加筛选条件
@@ -306,6 +339,11 @@ const fetchBooks = async (p = 1) => {
         console.error('Failed to fetch books:', error);
         if ($alert) $alert('error', t('library.message.fetchBooksFailed'));
     }
+};
+
+// 排序变更
+const onSortChange = () => {
+    fetchBooks(1);
 };
 
 // 加载筛选选项

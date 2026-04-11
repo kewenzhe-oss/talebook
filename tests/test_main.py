@@ -170,18 +170,20 @@ class TestApp(testing.AsyncHTTPTestCase):
 
 class TestAppWithoutLogin(TestApp):
     def test_index(self):
-        d = self.json("/api/index?random=7&recent=9")
-        self.assertEqual(len(d["new_books"]), 9)
-        self.assertEqual(len(d["random_books"]), 7)
-        for book in d["new_books"] + d["random_books"]:
+        d = self.json("/api/index?recent=9")
+        self.assertTrue("recent_books" in d)
+        self.assertEqual(len(d["recent_books"]), 9)
+        self.assertTrue("continue_reading" in d)
+        for book in d["recent_books"]:
             self.assert_book_simple(book)
 
-        book = d["new_books"][0]
-        for author in book["authors"]:
-            self.json("/api/author/" + Q(author))
+        if d["recent_books"]:
+            book = d["recent_books"][0]
+            for author in book["authors"]:
+                self.json("/api/author/" + Q(author))
 
-        self.json("/api/author/" + Q(book["author"]))
-        self.json("/api/publisher/" + Q(book["publisher"]))
+            self.json("/api/author/" + Q(book["author"]))
+            self.json("/api/publisher/" + Q(book["publisher"]))
 
     def test_search(self):
         d = self.json("/api/search")
@@ -196,6 +198,10 @@ class TestAppWithoutLogin(TestApp):
         self.assertEqual(len(d["books"]), 0)
 
         d = self.json("/api/search?name=A")
+        self.assert_book_list(d, 6)
+
+        # title param should also work (backward compat with frontend hero search)
+        d = self.json("/api/search?title=A")
         self.assert_book_list(d, 6)
 
     def test_hot(self):

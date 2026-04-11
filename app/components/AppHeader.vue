@@ -461,6 +461,8 @@ const allLocales = computed(() => {
     return locales.value || [];
 });
 
+const navData = ref(null);
+
 const items = computed(() => {
     var home_links = [
         // home
@@ -474,7 +476,6 @@ const items = computed(() => {
         {
             icon: 'mdi-cog',
             text: $t('navigation.admin'),
-            // expand: route.path.indexOf("/admin/") == 0, // V3 list group handles expand differently (via value/opened)
             groups: [
                 { icon: 'mdi-cog', href: '/admin/settings', text: $t('navigation.settings') },
                 { icon: 'mdi-human-greeting', href: '/admin/users', text: $t('navigation.users') },
@@ -483,26 +484,64 @@ const items = computed(() => {
             ],
         },
     ];
-    var nav_links = [
-        {
-            icon: 'mdi-view-grid', 
-            text: '三大课题',
-            groups: [
-                { icon: 'mdi-briefcase', href: '/subject/工作', text: '工作', subtitle: '' },
-                { icon: 'mdi-account-group', href: '/subject/交友', text: '交友', subtitle: '' },
-                { icon: 'mdi-heart', href: '/subject/爱', text: '爱', subtitle: '' }
-            ]
-        },
-        {
-            icon: 'mdi-dots-horizontal',
-            text: '更多分类',
-            groups: [
-                { icon: 'mdi-home-group', href: '/publisher', text: $t('navigation.publishers'), subtitle: $t('counts.publishers', { count: store.sys.publishers }) },
-                { icon: 'mdi-tag-heart', href: '/tag', text: $t('navigation.tags'), subtitle: $t('counts.tags', { count: store.sys.tags }) },
-                { icon: 'mdi-file', href: '/format', text: $t('navigation.formats'), subtitle: $t('counts.formats', { count: store.sys.formats }) }
-            ]
+
+    // Dynamic category navigation (Category-first, no tag buttons)
+    var nav_links = [];
+    const cats = navData.value?.categories || [];
+    const navs = navData.value?.navs || [];
+
+    if (cats.length > 0) {
+        // New: BOOK_CATEGORIES exist → render as category groups
+        const catIcons = {
+            '工作': 'mdi-briefcase',
+            '交友': 'mdi-account-group',
+            '爱': 'mdi-heart',
+        };
+        const catGroups = cats
+            .filter(c => c.enabled !== false)
+            .map(c => ({
+                icon: c.icon || catIcons[c.name] || 'mdi-folder',
+                href: '/subject/' + encodeURIComponent(c.id),
+                text: c.name,
+                subtitle: (navData.value?.category_counts?.[c.id] || 0) + ' 本书',
+            }));
+        if (catGroups.length > 0) {
+            nav_links.push({
+                icon: 'mdi-view-grid',
+                text: '分类导航',
+                groups: catGroups,
+            });
         }
-    ];
+    } else if (navs.length > 0) {
+        // Fallback: BOOK_NAV exists → render legend groups as categories (no tag buttons)
+        const navGroups = navs
+            .filter(n => n.legend !== '其他')
+            .map(n => ({
+                icon: 'mdi-folder',
+                href: '/nav',
+                text: n.legend,
+                subtitle: '',
+            }));
+        if (navGroups.length > 0) {
+            nav_links.push({
+                icon: 'mdi-view-grid',
+                text: '分类导航',
+                groups: navGroups,
+            });
+        }
+    }
+
+    // Always show browse-by-metadata group
+    nav_links.push({
+        icon: 'mdi-dots-horizontal',
+        text: '更多分类',
+        groups: [
+            { icon: 'mdi-home-group', href: '/publisher', text: $t('navigation.publishers'), subtitle: $t('counts.publishers', { count: store.sys.publishers }) },
+            { icon: 'mdi-tag-heart', href: '/tag', text: $t('navigation.tags'), subtitle: $t('counts.tags', { count: store.sys.tags }) },
+            { icon: 'mdi-file', href: '/format', text: $t('navigation.formats'), subtitle: $t('counts.formats', { count: store.sys.formats }) }
+        ]
+    });
+
     var friend_links = [
         // links
         { heading: $t('messages.friendshipLinks') },
@@ -536,6 +575,11 @@ onMounted(() => {
     $backend('/user/messages').then((rsp) => {
         if (rsp.err == 'ok') {
             messages.value = rsp.messages;
+        }
+    });
+    $backend('/book/nav').then((rsp) => {
+        if (rsp.err == 'ok') {
+            navData.value = rsp;
         }
     });
 });
