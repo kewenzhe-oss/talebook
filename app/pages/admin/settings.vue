@@ -563,9 +563,19 @@ onMounted(() => {
 });
 
 const save_settings = () => {
+    // 强制深拷贝，避免部分 Vue Proxy 嵌套导致 JSON.stringify 漏掉属性
+    const payload = JSON.parse(JSON.stringify(settings.value));
+    
+    // 如果由于某种原因绑定脱落，我们可以尝试直接从源取（备用安全器）
+    if (settings.value.BOOK_CATEGORIES) {
+        payload.BOOK_CATEGORIES = JSON.parse(JSON.stringify(settings.value.BOOK_CATEGORIES));
+    }
+    
+    console.log("📤 POST payload BOOK_CATEGORIES:", payload.BOOK_CATEGORIES);
+
     $backend('/admin/settings', {
         method: 'POST',
-        body: JSON.stringify(settings.value),
+        body: JSON.stringify(payload),
     })
         .then( rsp => {
             if ( rsp.err != 'ok' ) {

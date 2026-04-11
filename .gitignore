@@ -119,3 +119,8 @@ talebook_data/
 # =========================
 app/test-results/
 app/playwright-report/
+test_admin.py
+categories_export.json
+webserver/auto.py
+tools/.venv/
+tools/tag_data/

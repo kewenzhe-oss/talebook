@@ -58,6 +58,7 @@
                     lg="3"
                 >
                     <v-card
+                        :to="'/subject/' + encodeURIComponent(nav.legend)"
                         class="category-card rounded-xl pa-5"
                         color="primary"
                         variant="flat"

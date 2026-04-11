@@ -518,7 +518,7 @@ const items = computed(() => {
             .filter(n => n.legend !== '其他')
             .map(n => ({
                 icon: 'mdi-folder',
-                href: '/nav',
+                href: '/subject/' + encodeURIComponent(n.legend),
                 text: n.legend,
                 subtitle: '',
             }));

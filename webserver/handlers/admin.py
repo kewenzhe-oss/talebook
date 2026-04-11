@@ -304,7 +304,16 @@ class AdminSettings(BaseHandler):
                 "link": "https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/Wechat_webpage_authorization.html",
             },
         ]
-        return {"err": "ok", "settings": CONF, "sns": sns, "site_url": self.site_url}
+        settings_copy = dict(CONF)
+        cat_config = settings_copy.get("BOOK_CATEGORIES", "[]")
+        if isinstance(cat_config, str):
+            import json
+            try:
+                settings_copy["BOOK_CATEGORIES"] = json.loads(cat_config)
+            except:
+                settings_copy["BOOK_CATEGORIES"] = []
+                
+        return {"err": "ok", "settings": settings_copy, "sns": sns, "site_url": self.site_url}
 
     @js
     @auth
@@ -370,12 +379,16 @@ class AdminSettings(BaseHandler):
         args = loader.SettingsLoader()
         args.clear()
 
+        import json
         for key, val in data.items():
             if key.startswith("SOCIAL_AUTH"):
                 if key.endswith("_KEY") or key.endswith("_SECRET"):
                     args[key] = val
             elif key in KEYS:
-                args[key] = val
+                if key == "BOOK_CATEGORIES":
+                    args[key] = json.dumps(val, ensure_ascii=False)
+                else:
+                    args[key] = val
 
         logic = SettingsSaverLogic()
         return logic.save_extra_settings(args)

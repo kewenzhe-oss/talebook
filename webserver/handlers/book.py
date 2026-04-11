@@ -536,6 +536,12 @@ class BookNav(ListHandler):
     @js
     def get(self):
         categories_config = CONF.get("BOOK_CATEGORIES", [])
+        if isinstance(categories_config, str):
+            import json
+            try:
+                categories_config = json.loads(categories_config)
+            except:
+                categories_config = []
         
         # Fallback to old behavior if no categories are migrated yet
         if not categories_config:
@@ -564,7 +570,40 @@ class BookNav(ListHandler):
                 if tag not in done
             ]
             navs.append({"legend": _("其他"), "tags": tag_items})
-            return {"err": "ok", "navs": navs}
+
+            # Synthesize categories & category_counts from BOOK_NAV so the
+            # frontend can uniformly consume category-style data even in the
+            # fallback path.
+            nav_icons = {
+                "经管": "mdi-briefcase",
+                "文学": "mdi-book-open-page-variant",
+                "流行": "mdi-star",
+                "文化": "mdi-school",
+                "生活": "mdi-heart",
+                "科技": "mdi-cellphone-link",
+            }
+            fallback_categories = []
+            fallback_category_counts = {}
+            for nav_item in navs:
+                legend = nav_item["legend"]
+                if legend == _("其他"):
+                    continue
+                total_count = sum(t.get("count", 0) for t in nav_item.get("tags", []))
+                fallback_categories.append({
+                    "id": legend,
+                    "name": legend,
+                    "icon": nav_icons.get(legend, "mdi-folder"),
+                    "enabled": True,
+                    "count": total_count,
+                })
+                fallback_category_counts[legend] = total_count
+
+            return {
+                "err": "ok",
+                "navs": navs,
+                "categories": fallback_categories,
+                "category_counts": fallback_category_counts,
+            }
             
         # New Categories Logic
         from webserver.utils import match_book_to_categories
@@ -986,6 +1025,12 @@ class CategoryBooks(ListHandler):
     def get(self, category_id):
         category_id = urllib.parse.unquote(category_id)
         categories_config = CONF.get("BOOK_CATEGORIES", [])
+        if isinstance(categories_config, str):
+            import json
+            try:
+                categories_config = json.loads(categories_config)
+            except:
+                categories_config = []
         start = int(self.get_argument("start", 0))
         size = int(self.get_argument("size", 20))
         
@@ -1018,8 +1063,10 @@ class CategoryBooks(ListHandler):
         
         matched_books = []
         for book_id in ids:
-            book = self.db.get_book(book_id)
-            if not book: continue
+            books = self.get_books(ids=[book_id])
+            if not books: continue
+            book = books[0]
+            if "id" not in book: continue
             
             hits = match_book_to_categories(book, [target_cat])
             if hits:
