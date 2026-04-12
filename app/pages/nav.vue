@@ -2,36 +2,36 @@
     <div>
         <!-- Category-first view: when categories exist -->
         <template v-if="categories.length > 0">
-            <v-row class="mb-4">
+            <v-row class="mb-6">
                 <v-col cols="12">
-                    <h2 class="text-h5 font-weight-bold">分类导航</h2>
-                    <p class="text-subtitle-2 text-grey mt-1">按主题分类浏览书库</p>
+                    <h2 class="text-h4 font-weight-bold" style="letter-spacing: 0.02em;">分類導航</h2>
+                    <p class="text-subtitle-1 text-grey-darken-1 mt-2" style="font-weight: 300;">從主題進入你的下一本書，按知識領域探索這座書房</p>
                 </v-col>
             </v-row>
             <v-row>
                 <v-col
                     v-for="cat in categories"
                     :key="cat.id"
-                    cols="12"
-                    sm="6"
-                    md="4"
+                    cols="6"
+                    sm="4"
+                    md="3"
                     lg="3"
                 >
                     <v-card
                         :to="'/subject/' + encodeURIComponent(cat.id)"
-                        class="category-card rounded-xl pa-5"
-                        :color="cat.color || 'primary'"
-                        variant="flat"
+                        class="category-card rounded-xl pa-5 transition-swing"
+                        variant="outlined"
+                        style="border-width: 1px; border-color: rgba(var(--v-theme-on-surface), 0.12);"
                         hover
                     >
                         <div class="d-flex align-center mb-3">
-                            <v-icon size="36" class="text-white mr-3">
+                            <v-icon size="36" class="text-grey-darken-2 mr-3">
                                 {{ cat.icon || 'mdi-folder' }}
                             </v-icon>
-                            <div>
-                                <div class="text-h6 font-weight-bold text-white">{{ cat.name }}</div>
-                                <div class="text-caption text-white" style="opacity:0.8" v-if="categoryCounts[cat.id]">
-                                    {{ categoryCounts[cat.id] }} 本书
+                            <div style="min-width: 0;">
+                                <div class="text-h6 font-weight-bold text-truncate">{{ cat.name }}</div>
+                                <div class="text-caption text-grey" v-if="categoryCounts[cat.id]">
+                                    {{ categoryCounts[cat.id] }} 本書
                                 </div>
                             </div>
                         </div>
@@ -42,34 +42,34 @@
 
         <!-- Fallback: legacy tag-based nav (when no categories configured) -->
         <template v-else-if="navs.length > 0">
-            <v-row>
+            <v-row class="mb-6">
                 <v-col cols="12">
-                    <h2 class="text-h5 font-weight-bold">分类导航</h2>
-                    <p class="text-subtitle-2 text-grey mt-1">按主题分类浏览书库</p>
+                    <h2 class="text-h4 font-weight-bold" style="letter-spacing: 0.02em;">分類導航</h2>
+                    <p class="text-subtitle-1 text-grey-darken-1 mt-2" style="font-weight: 300;">從主題進入你的下一本書，按知識領域探索這座書房</p>
                 </v-col>
             </v-row>
             <v-row>
                 <v-col
                     v-for="nav in navs"
                     :key="nav.legend"
-                    cols="12"
-                    sm="6"
-                    md="4"
+                    cols="6"
+                    sm="4"
+                    md="3"
                     lg="3"
                 >
                     <v-card
                         :to="'/subject/' + encodeURIComponent(nav.legend)"
-                        class="category-card rounded-xl pa-5"
-                        color="primary"
-                        variant="flat"
+                        class="category-card rounded-xl pa-5 transition-swing"
+                        variant="outlined"
+                        style="border-width: 1px; border-color: rgba(var(--v-theme-on-surface), 0.12);"
                         hover
                     >
                         <div class="d-flex align-center">
-                            <v-icon size="36" class="text-white mr-3">mdi-folder</v-icon>
-                            <div>
-                                <div class="text-h6 font-weight-bold text-white">{{ nav.legend }}</div>
-                                <div class="text-caption text-white" style="opacity:0.8">
-                                    {{ nav.count || nav.tags?.length || 0 }} 本书
+                            <v-icon size="36" class="text-grey-darken-2 mr-3">mdi-folder</v-icon>
+                            <div style="min-width: 0;">
+                                <div class="text-h6 font-weight-bold text-truncate">{{ nav.legend }}</div>
+                                <div class="text-caption text-grey">
+                                    {{ nav.count || nav.tags?.length || 0 }} 本書
                                 </div>
                             </div>
                         </div>
@@ -152,11 +152,14 @@ useHead(() => ({
 </script>
 
 <style scoped>
+.transition-swing {
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.5, 1);
+}
 .category-card {
-    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.5, 1), box-shadow 0.2s;
     cursor: pointer;
 }
 .category-card:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 </style>

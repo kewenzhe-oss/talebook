@@ -331,7 +331,6 @@ const cardShows = ref({
     emailService: false,
     bookCategories: false,
     friendshipLinks: false,
-    bookInfoSources: false,
     advancedSettings: false,
     sslManagement: false,
     opdsSettings: false,
@@ -430,21 +429,7 @@ const cards = computed(() => [
         show_friends: true,
     },
 
-    {
-        key: 'bookInfoSources',
-        title: t('admin.settings.section.bookInfoSources'),
-        fields: [
-            { icon: '', key: 'auto_fill_meta', label: t('admin.settings.label.autoFillMeta'), type: 'checkbox' },
-            { icon: 'mdi-information', key: 'douban_baseurl', label: t('admin.settings.label.doubanBaseurl') },
-            { icon: 'mdi-information', key: 'douban_max_count', label: t('admin.settings.label.doubanMaxCount') },
-        ],
-        tips: [
-            {
-                text: t('admin.settings.message.doubanPluginInfo'),
-                link: 'https://github.com/talebook/talebook/blob/master/document/README.zh_CN.md#%E5%A6%82%E6%9E%9C%E9%85%8D%E7%BD%AE%E8%B1%86%E7%93%A3%E6%8F%92%E4%BB%B6',
-            }
-        ],
-    },
+
     {
         key: 'opdsSettings',
         title: t('admin.settings.section.opdsSettings'),

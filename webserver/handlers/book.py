@@ -207,92 +207,12 @@ class BookRefer(BaseHandler):
     @js
     @auth
     def get(self, id):
-        book_id = int(id)
-        mi = self.db.get_metadata(book_id, index_is_id=True)
-        books = self.plugin_search_books(mi)
-        keys = [
-            "cover_url",
-            "source",
-            "website",
-            "title",
-            "author_sort",
-            "publisher",
-            "isbn",
-            "comments",
-            "provider_key",
-            "provider_value",
-        ]
-        rsp = []
-        for b in books:
-            d = dict((k, b.get(k, "")) for k in keys)
-            pubdate = b.get("pubdate")
-            d["pubyear"] = pubdate.strftime("%Y") if pubdate else ""
-            if not d["comments"]:
-                d["comments"] = _("无详细介绍")
-            rsp.append(d)
-        return {"err": "ok", "books": rsp}
+        return {"err": "Feature disabled by system policy", "msg": "External scraping disabled"}
 
     @js
     @auth
     def post(self, id):
-        provider_key = self.get_argument("provider_key", "error")
-        provider_value = self.get_argument("provider_value", "")
-        only_meta = self.get_argument("only_meta", "")
-        only_cover = self.get_argument("only_cover", "")
-        book_id = int(id)
-        if not provider_key:
-            return {
-                "err": "params.provider_key.invalid",
-                "msg": _("provider_key参数错误"),
-            }
-        if not provider_value:
-            return {
-                "err": "params.provider_key.invalid",
-                "msg": _("provider_value参数错误"),
-            }
-        if only_meta == "yes" and only_cover == "yes":
-            return {"err": "params.conflict", "msg": _("参数冲突")}
-
-        mi = self.db.get_metadata(book_id, index_is_id=True)
-        if not mi:
-            return {"err": "params.book.invalid", "msg": _("书籍不存在")}
-        if not self.is_admin() and not self.is_book_owner(book_id, self.user_id()):
-            return {"err": "user.no_permission", "msg": _("无权限")}
-
-        original_cover_data = mi.cover_data
-        try:
-            refer_mi = self.plugin_get_book_meta(provider_key, provider_value, mi)
-        except RuntimeError as e:
-            return e.args[0] if e.args else {"err": "unknown.error", "msg": str(e)}
-
-        cover_fallback = False
-        if only_cover == "yes":
-            # 仅设置封面，检查封面数据是否有效
-            if refer_mi.cover_data and len(refer_mi.cover_data) > 0:
-                mi.cover_data = refer_mi.cover_data
-            else:
-                return {"err": "cover.empty", "msg": _("获取到的封面数据为空")}
-        else:
-            if only_meta == "yes":
-                refer_mi.cover_data = None
-            else:
-                # 更新前检查封面数据是否有效
-                if not refer_mi.cover_data and original_cover_data:
-                    # 豆瓣封面获取失败，使用了本地原有封面
-                    refer_mi.cover_data = original_cover_data
-                    cover_fallback = True
-                elif refer_mi.cover_data and len(refer_mi.cover_data) == 0:
-                    refer_mi.cover_data = None
-
-            mi.smart_update(refer_mi, replace_metadata=True)
-
-        self.db.set_metadata(book_id, mi)
-        if cover_fallback:
-            return {
-                "err": "ok",
-                "msg": _("书籍信息更新成功，但豆瓣封面获取失败，已使用本地原有封面"),
-            }
-        return {"err": "ok"}
+        return {"err": "Feature disabled by system policy", "msg": "External scraping disabled"}
 
 
 class BookEdit(BaseHandler):

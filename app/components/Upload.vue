@@ -2,10 +2,11 @@
     <div>
         <v-btn
             class="upload-btn"
-            color="pink"
+            color="primary"
+            variant="tonal"
             icon="mdi-upload"
             size="large"
-            elevation="4"
+            elevation="2"
             @click="dialog = !dialog"
         />
         <v-dialog
@@ -20,24 +21,24 @@
                     density="compact"
                     color="primary"
                 >
-                    <v-toolbar-title>{{ $t('messages.uploadBooks') }}</v-toolbar-title>
+                    <v-toolbar-title>上傳書籍</v-toolbar-title>
                     <v-spacer />
                     <v-btn
                         variant="text"
                         @click="dialog = false"
                     >
-                        {{ $t('messages.dialogClose') }}
+                        關閉
                     </v-btn>
                 </v-toolbar>
                 <v-card-text>
-                    <p>{{ $t('messages.uploadNotice') }}</p>
+                    <p>支援 epub/mobi/azw3/pdf/txt 等格式</p>
                     <v-form
                         ref="form"
                         @submit.prevent="do_upload"
                     >
                         <v-file-input
                             v-model="ebooks"
-                            :label="$t('messages.selectEbook')"
+                            label="選擇電子書檔案"
                         />
                     </v-form>
                 </v-card-text>
@@ -48,7 +49,7 @@
                         color="primary"
                         @click="do_upload"
                     >
-                        {{ $t('actions.upload') }}
+                        上傳
                     </v-btn>
                     <v-spacer />
                 </v-card-actions>
@@ -88,10 +89,10 @@ function do_upload() {
         .then(rsp => {
             dialog.value = false;
             if (rsp.err === 'ok') {
-                $alert('success', t('messages.uploadSuccess'), '/book/' + rsp.book_id);
+                $alert('success', '上傳成功', '/book/' + rsp.book_id);
                 router.push('/book/' + rsp.book_id);
             } else if (rsp.err === 'samebook') {
-                $alert('error', rsp.msg, '/book/' + rsp.book_id);
+                $alert('error', '書籍已存在', '/book/' + rsp.book_id);
                 router.push('/book/' + rsp.book_id);
             } else {
                 $alert('error', rsp.msg);

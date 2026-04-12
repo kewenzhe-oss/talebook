@@ -19,25 +19,11 @@
                     small
                     variant="text"
                     target="_blank"
-                    href="https://github.com/talebook/talebook"
-                >
-                    Github
-                </v-btn>
-                | <v-btn
-                    small
-                    variant="text"
-                    target="_blank"
-                    href="https://hub.docker.com/r/talebook/talebook"
-                >
-                    Docker
-                </v-btn>
-                | <v-btn
-                    small
-                    variant="text"
-                    target="_blank"
                     href="https://www.postsoma-2050.com/"
+                    class="text-grey-darken-1 font-weight-light"
+                    style="letter-spacing: 0.05em;"
                 >
-                    PostSoma-2050
+                    POSTSOMA-2050
                 </v-btn>
             </p>
         </v-col>

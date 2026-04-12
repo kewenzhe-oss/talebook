@@ -32,7 +32,7 @@
                                     color="primary"
                                     @click="do_mobile_search"
                                 >
-                                    {{ $t('common.search') }}
+                                    搜尋
                                 </v-btn>
                             </v-col>
                         </v-row>
@@ -49,7 +49,7 @@
                 {{ store.sys.title }}
             </v-toolbar-title>
 
-            <template v-if="display.smAndUp.value">
+            <template v-if="display.smAndUp.value && route.path !== '/'">
                 <div class="search-wrapper">
                     <v-text-field
                         ref="search_input"
@@ -59,7 +59,7 @@
                         hide-details
                         prepend-inner-icon="mdi-magnify"
                         name="name"
-                        :label="$t('common.search')"
+                        label="搜尋..."
                         class="d-none d-sm-flex search-field"
                         :theme="store.theme"
                         :bg-color="store.theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.3)'"
@@ -69,7 +69,7 @@
             </template>
 
             <v-btn
-                v-else
+                v-else-if="route.path !== '/'"
                 icon
                 class="d-flex d-sm-none"
                 @click="btn_search = !btn_search"
@@ -143,39 +143,6 @@
                         <v-icon>{{ store.theme === 'light' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
                     </v-btn>
 
-                    <!-- 多语言切换入口 -->
-                    <v-menu
-                        offset-y
-                        right
-                    >
-                        <template #activator="{ props }">
-                            <v-btn
-                                v-bind="props"
-                                icon
-                            >
-                                <v-icon>mdi-translate</v-icon>
-                            </v-btn>
-                        </template>
-                        <v-list min-width="240">
-                            <!-- 显示所有语言选项，当前语言高亮显示 -->
-                            <v-list-item
-                                v-for="localeItem in allLocales"
-                                :key="localeItem.code"
-                                :active="localeItem.code === locale"
-                                @click="setLocale(localeItem.code)"
-                            >
-                                <template #prepend>
-                                    <v-icon v-if="localeItem.code === locale">
-                                        mdi-check
-                                    </v-icon>
-                                    <v-icon v-else>
-                                        mdi-translate
-                                    </v-icon>
-                                </template>
-                                <v-list-item-title>{{ localeItem.name }}</v-list-item-title>
-                            </v-list-item>
-                        </v-list>
-                    </v-menu>
 
                     <v-menu
                         offset-y
@@ -209,26 +176,26 @@
                             <v-divider class="my-2" />
                             <v-list-item
                                 to="/user/detail"
-                                :title="$t('messages.userCenter')"
+                                title="個人中心"
                                 prepend-icon="mdi-account-box"
                             />
                             <v-list-item
                                 to="/user/history"
-                                :title="$t('messages.readingHistory')"
+                                title="閱讀歷史"
                                 prepend-icon="mdi-history"
                             />
                             <v-list-item
                                 v-if="store.sys.allow.FEEDBACK"
                                 target="_blank"
                                 :href="store.sys.FEEDBACK_URL"
-                                :title="$t('messages.feedback')"
+                                title="問題反映"
                                 prepend-icon="mdi-message-alert"
                             />
                             <v-divider />
                             <template v-if="store.user.is_admin">
                                 <v-list-item
                                     to="/admin/settings"
-                                    :title="$t('messages.adminEntry')"
+                                    title="管理後台"
                                 >
                                     <template #prepend>
                                         <v-icon color="red">
@@ -240,7 +207,7 @@
 
                             <v-list-item
                                 to="/logout"
-                                :title="$t('messages.logout')"
+                                title="登出"
                                 prepend-icon="mdi-exit-to-app"
                             />
                         </v-list>
@@ -256,51 +223,13 @@
                         <v-icon>{{ store.theme === 'light' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
                     </v-btn>
 
-                    <!-- 多语言切换入口（未登录状态） -->
-                    <v-menu
-                        offset-y
-                        right
-                    >
-                        <template #activator="{ props }">
-                            <v-btn
-                                v-bind="props"
-                                icon
-                            >
-                                <v-icon>mdi-translate</v-icon>
-                            </v-btn>
-                        </template>
-                        <v-list min-width="240">
-                            <v-list-item
-                                v-for="localeItem in allLocales"
-                                :key="localeItem.code"
-                                :active="localeItem.code === locale"
-                                @click="setLocale(localeItem.code)"
-                            >
-                                <template #prepend>
-                                    <v-icon v-if="localeItem.code === locale">
-                                        mdi-check
-                                    </v-icon>
-                                    <v-icon v-else>
-                                        mdi-translate
-                                    </v-icon>
-                                </template>
-                                <v-list-item-title>{{ localeItem.name }}</v-list-item-title>
-                            </v-list-item>
-                        </v-list>
-                    </v-menu>
-
                     <v-btn
-                        class="px-xs-1 login-btn mr-4"
+                        class="login-btn mr-4 text-none font-weight-medium"
                         to="/login"
-                        color="#304ffe"
-                        variant="elevated"
+                        variant="text"
+                        :color="store.theme === 'light' ? 'grey-darken-3' : 'grey-lighten-2'"
                     >
-                        <v-icon
-                            class="d-none d-sm-flex me-0"
-                            size="24"
-                        >
-                            mdi-account-circle
-                        </v-icon> {{ $t('messages.pleaseLogin') }}
+                        請登入
                     </v-btn>
                 </template>
             </template>
@@ -314,6 +243,8 @@
             <v-list
                 v-if="items.length > 0"
                 density="compact"
+                nav
+                color="primary"
             >
                 <template
                     v-for="(item, idx) in items"
@@ -466,21 +397,21 @@ const navData = ref(null);
 const items = computed(() => {
     var home_links = [
         // home
-        { icon: 'mdi-home', href: '/', text: $t('navigation.home') },
+        { icon: 'mdi-home', href: '/', text: '首頁' },
     ];
     var library_links = [
         // home
-        { icon: 'mdi-book', href: '/library', text: $t('navigation.library') },
+        { icon: 'mdi-book', href: '/library', text: '書庫' },
     ];
     var admin_links = [
         {
             icon: 'mdi-cog',
-            text: $t('navigation.admin'),
+            text: '管理',
             groups: [
-                { icon: 'mdi-cog', href: '/admin/settings', text: $t('navigation.settings') },
-                { icon: 'mdi-human-greeting', href: '/admin/users', text: $t('navigation.users') },
-                { icon: 'mdi-library-shelves', href: '/admin/books', text: $t('navigation.books') },
-                { icon: 'mdi-import', href: '/admin/imports', text: $t('navigation.import') },
+                { icon: 'mdi-cog', href: '/admin/settings', text: '設定' },
+                { icon: 'mdi-human-greeting', href: '/admin/users', text: '使用者' },
+                { icon: 'mdi-library-shelves', href: '/admin/books', text: '書籍' },
+                { icon: 'mdi-import', href: '/admin/imports', text: '匯入' },
             ],
         },
     ];
@@ -497,18 +428,39 @@ const items = computed(() => {
             '交友': 'mdi-account-group',
             '爱': 'mdi-heart',
         };
+        const categoryMap = {
+            'philosophy': '哲學與思想',
+            'history-politics': '歷史與政治',
+            'science-history': '科學史',
+            'sociology': '社會學',
+            'logic': '邏輯學',
+            'business-management': '商業與管理',
+            'economics-investment': '經濟與投資',
+            'genius-madness': '天才與瘋狂',
+            'science': '科學史',
+            'history': '歷史與政治',
+            'business': '商業與管理',
+            'economics': '經濟與投資',
+            '科学史': '科學史',
+            '天才与疯狂': '天才與瘋狂',
+            '社会学': '社會學',
+            '逻辑学': '邏輯學',
+            '历史与政治': '歷史與政治',
+            '商业与管理': '商業與管理',
+            '经济与投资': '經濟與投資'
+        };
         const catGroups = cats
             .filter(c => c.enabled !== false)
             .map(c => ({
                 icon: c.icon || catIcons[c.name] || 'mdi-folder',
                 href: '/subject/' + encodeURIComponent(c.id),
-                text: c.name,
-                subtitle: (navData.value?.category_counts?.[c.id] || 0) + ' 本书',
+                text: categoryMap[c.id] || categoryMap[c.name] || categoryMap[c.name.toLowerCase()] || c.name,
+                subtitle: (navData.value?.category_counts?.[c.id] || 0) + ' 本藏書',
             }));
         if (catGroups.length > 0) {
             nav_links.push({
                 icon: 'mdi-view-grid',
-                text: '分类导航',
+                text: '分類導航',
                 groups: catGroups,
             });
         }
@@ -525,7 +477,7 @@ const items = computed(() => {
         if (navGroups.length > 0) {
             nav_links.push({
                 icon: 'mdi-view-grid',
-                text: '分类导航',
+                text: '分類導航',
                 groups: navGroups,
             });
         }
@@ -534,17 +486,17 @@ const items = computed(() => {
     // Always show browse-by-metadata group
     nav_links.push({
         icon: 'mdi-dots-horizontal',
-        text: '更多分类',
+        text: '展開全部分類',
         groups: [
-            { icon: 'mdi-home-group', href: '/publisher', text: $t('navigation.publishers'), subtitle: $t('counts.publishers', { count: store.sys.publishers }) },
-            { icon: 'mdi-tag-heart', href: '/tag', text: $t('navigation.tags'), subtitle: $t('counts.tags', { count: store.sys.tags }) },
-            { icon: 'mdi-file', href: '/format', text: $t('navigation.formats'), subtitle: $t('counts.formats', { count: store.sys.formats }) }
+            { icon: 'mdi-home-group', href: '/publisher', text: '出版社', subtitle: store.sys.publishers + ' 間' },
+            { icon: 'mdi-tag-heart', href: '/tag', text: '標籤', subtitle: store.sys.tags + ' 個' },
+            { icon: 'mdi-file', href: '/format', text: '格式', subtitle: store.sys.formats + ' 種' }
         ]
     });
 
     var friend_links = [
         // links
-        { heading: $t('messages.friendshipLinks') },
+        { heading: '友情連結' },
         { links: store.sys.friends, target: '_blank' },
     ];
     // HIDDEN: 系统 section (version, user count, OPDS, QR code)
@@ -664,20 +616,48 @@ function toggleTheme() {
 
 /* 侧边栏字体大小 */
 :deep(.v-navigation-drawer) .v-list-item-title {
-    font-size: 13px !important;
-    font-weight: 500 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
 }
 :deep(.v-navigation-drawer) .v-list-subheader__text {
     font-size: 12px !important;
     font-weight: 500 !important;
+    letter-spacing: 0.05em;
 }
 :deep(.v-navigation-drawer) .v-list-item--density-compact .v-list-item-title {
-    font-size: 13px !important;
-    font-weight: 500 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
 }
 :deep(.v-navigation-drawer) .v-btn__content {
     font-size: 14px !important;
     font-weight: 500 !important;
+}
+/* Icon style */
+:deep(.v-navigation-drawer) .v-list-item__prepend > .v-icon {
+    font-size: 20px !important;
+    opacity: 0.6 !important;
+}
+:deep(.v-navigation-drawer) .v-list-item--active .v-list-item__prepend > .v-icon {
+    opacity: 1 !important;
+}
+/* Count styling */
+:deep(.v-navigation-drawer) .v-chip {
+    font-weight: 500;
+    opacity: 0.8;
+    border: none;
+    background-color: rgba(var(--v-theme-on-surface), 0.05);
+}
+/* Active state indicator */
+:deep(.v-navigation-drawer) .v-list-item--active::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 15%;
+    bottom: 15%;
+    width: 4px;
+    background-color: rgb(var(--v-theme-primary));
+    border-radius: 0 4px 4px 0;
 }
 
 /* 侧边栏额外内容居中 */

@@ -1,252 +1,202 @@
 <template>
-    <div>
-        <v-row>
-            <v-col cols="12">
-                <div class="d-flex align-center justify-space-between">
-                    <h2>{{ title }}</h2>
-                    <div class="d-flex align-center ga-3">
-                        <v-btn
-                            variant="tonal"
-                            color="primary"
-                            size="small"
-                            prepend-icon="mdi-view-grid"
-                            to="/nav"
-                        >
-                            按分类找书
-                        </v-btn>
+    <v-container fluid class="px-0 px-md-4 py-6">
+        <!-- Mobile Filter Trigger -->
+        <div class="d-flex d-md-none mb-4 px-4">
+            <v-btn block color="primary" variant="tonal" prepend-icon="mdi-filter-variant" @click="mobileFilterDrawer = true">
+                篩選與分類
+            </v-btn>
+        </div>
+
+        <!-- Mobile Drawer -->
+        <v-navigation-drawer v-model="mobileFilterDrawer" temporary location="left" width="300">
+            <div class="pa-4">
+                <div class="d-flex justify-space-between align-center mb-6">
+                    <h3 class="text-subtitle-1 font-weight-bold">篩選面板</h3>
+                    <v-btn icon="mdi-close" variant="text" density="compact" @click="mobileFilterDrawer = false"></v-btn>
+                </div>
+                <!-- Filters content for mobile -->
+                <div class="mb-4">
+                    <div class="text-subtitle-2 font-weight-bold mb-1 text-grey-darken-1">出版社</div>
+                    <v-autocomplete
+                        v-model="filters.publisher"
+                        :items="autocompletePublisherOptions"
+                        variant="underlined"
+                        density="compact"
+                        hide-details
+                        class="mb-4"
+                        @update:model-value="onFilterChange"
+                    ></v-autocomplete>
+                </div>
+                <div class="mb-4">
+                    <div class="text-subtitle-2 font-weight-bold mb-1 text-grey-darken-1">作者</div>
+                    <v-autocomplete
+                        v-model="filters.author"
+                        :items="autocompleteAuthorOptions"
+                        variant="underlined"
+                        density="compact"
+                        hide-details
+                        class="mb-4"
+                        @update:model-value="onFilterChange"
+                    ></v-autocomplete>
+                </div>
+                <div class="mb-4">
+                    <div class="text-subtitle-2 font-weight-bold mb-1 text-grey-darken-1">標籤</div>
+                    <v-autocomplete
+                        v-model="filters.tag"
+                        :items="autocompleteTagOptions"
+                        variant="underlined"
+                        density="compact"
+                        hide-details
+                        class="mb-4"
+                        @update:model-value="onFilterChange"
+                    ></v-autocomplete>
+                </div>
+                <div class="mb-4">
+                    <div class="text-subtitle-2 font-weight-bold mb-1 text-grey-darken-1">格式</div>
+                    <v-select
+                        v-model="filters.format"
+                        :items="formatOptions"
+                        variant="underlined"
+                        density="compact"
+                        hide-details
+                        @update:model-value="onFilterChange"
+                    ></v-select>
+                </div>
+                <v-btn block color="primary" class="mt-4" @click="mobileFilterDrawer = false">完成</v-btn>
+            </div>
+        </v-navigation-drawer>
+
+        <v-row class="ma-0">
+            <!-- Desktop Sidebar -->
+            <v-col cols="12" md="3" lg="2" class="d-none d-md-block px-2">
+                <div style="position: sticky; top: 80px;">
+                    <h3 class="text-subtitle-1 font-weight-bold mb-5 mt-2" style="letter-spacing: 0.05em; color: rgba(var(--v-theme-on-surface), 0.7);">篩選</h3>
+                    
+                    <div class="mb-5">
+                        <div class="text-caption font-weight-bold mb-1 text-grey">出版社</div>
+                        <v-autocomplete
+                            v-model="filters.publisher"
+                            :items="autocompletePublisherOptions"
+                            variant="underlined"
+                            density="compact"
+                            hide-details
+                            bg-color="transparent"
+                            @update:model-value="onFilterChange"
+                        ></v-autocomplete>
+                    </div>
+                    <div class="mb-5">
+                        <div class="text-caption font-weight-bold mb-1 text-grey">作者</div>
+                        <v-autocomplete
+                            v-model="filters.author"
+                            :items="autocompleteAuthorOptions"
+                            variant="underlined"
+                            density="compact"
+                            hide-details
+                            bg-color="transparent"
+                            @update:model-value="onFilterChange"
+                        ></v-autocomplete>
+                    </div>
+                    <div class="mb-5">
+                        <div class="text-caption font-weight-bold mb-1 text-grey">標籤</div>
+                        <v-autocomplete
+                            v-model="filters.tag"
+                            :items="autocompleteTagOptions"
+                            variant="underlined"
+                            density="compact"
+                            hide-details
+                            bg-color="transparent"
+                            @update:model-value="onFilterChange"
+                        ></v-autocomplete>
+                    </div>
+                    <div class="mb-5">
+                        <div class="text-caption font-weight-bold mb-1 text-grey">格式</div>
+                        <v-select
+                            v-model="filters.format"
+                            :items="formatOptions"
+                            variant="underlined"
+                            density="compact"
+                            hide-details
+                            bg-color="transparent"
+                            @update:model-value="onFilterChange"
+                        ></v-select>
+                    </div>
+                </div>
+            </v-col>
+
+            <!-- Right Results Area -->
+            <v-col cols="12" md="9" lg="10" class="px-2">
+                <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between mb-6 pa-3 rounded-lg bg-surface">
+                    <div class="d-flex flex-column">
+                        <h2 class="text-h4 font-weight-bold mb-1" style="letter-spacing: 0.02em;">
+                            {{ title }}
+                            <span class="text-subtitle-1 text-grey font-weight-regular ml-2" v-if="total > 0">· {{ total }} 本藏書</span>
+                        </h2>
+                        
+                        <!-- Active Filters Summary (Integrated) -->
+                        <div v-if="hasActiveFilters" class="d-flex flex-wrap align-center ga-2 mt-2">
+                            <span class="text-caption text-grey-darken-1 font-weight-medium mr-2"><v-icon size="small" class="mr-1">mdi-filter-check</v-icon>已套用篩選:</span>
+                            
+                            <v-chip closable size="small" color="primary" variant="tonal"
+                                    v-if="filters.publisher && filters.publisher !== '全部'" 
+                                    @click:close="clearFilter('publisher')">
+                                出版社: {{ filters.publisher }}
+                            </v-chip>
+                            
+                            <v-chip closable size="small" color="primary" variant="tonal"
+                                    v-if="filters.author && filters.author !== '全部'" 
+                                    @click:close="clearFilter('author')">
+                                作者: {{ filters.author }}
+                            </v-chip>
+
+                            <v-chip closable size="small" color="primary" variant="tonal"
+                                    v-if="filters.tag && filters.tag !== '全部'" 
+                                    @click:close="clearFilter('tag')">
+                                標籤: {{ filters.tag }}
+                            </v-chip>
+
+                            <v-chip closable size="small" color="primary" variant="tonal"
+                                    v-if="filters.format && filters.format !== '全部'" 
+                                    @click:close="clearFilter('format')">
+                                格式: {{ filters.format }}
+                            </v-chip>
+
+                            <v-btn variant="text" size="small" color="grey-darken-1" class="ml-1 px-2" @click="clearAllFilters">清除全部</v-btn>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-center mt-3 mt-md-0 ml-md-4">
                         <v-select
                             v-model="sortBy"
                             :items="sortOptions"
                             item-title="text"
                             item-value="value"
-                            variant="outlined"
+                            variant="underlined"
                             density="compact"
                             hide-details
-                            style="max-width: 160px"
+                            style="max-width: 160px; min-width: 120px;"
                             prepend-inner-icon="mdi-sort"
+                            bg-color="transparent"
                             @update:model-value="onSortChange"
                         />
                     </div>
                 </div>
-                <v-divider class="mt-3 mb-0" />
-            </v-col>
 
-            <v-col cols="12">
-                <!-- 出版社筛选 -->
-                <div class="mb-2">
-                    <div class="d-flex align-center">
-                        <span class="mr-3">{{ $t('messages.publisher') }}{{ $t('messages.colon') }}</span>
-                        <v-chip-group
-                            :column="false"
-                            class="flex-grow-1"
-                        >
-                            <v-chip
-                                :class="filters.publisher === t('messages.all') ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                density="compact"
-                                label
-                                small
-                                @click="updateFilter('publisher', $t('messages.all'))"
-                            >
-                                {{ $t('messages.all') }}
-                            </v-chip>
-                            <v-chip
-                                v-for="item in filterOptions.publisher.slice(0, 10)"
-                                :key="item.id"
-                                :class="filters.publisher === item.name ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                density="compact"
-                                label
-                                small
-                                @click="updateFilter('publisher', item.name)"
-                            >
-                                {{ item.name }}
-                            </v-chip>
-                            <template v-if="filterOptions.publisher.length > 10">
-                                <v-chip
-                                    class="filter-chip-more"
-                                    density="compact"
-                                    label
-                                    small
-                                    @click="expanded.publisher = !expanded.publisher"
-                                >
-                                    {{ expanded.publisher ? $t('messages.collapse') : `${$t('messages.more')}(${filterOptions.publisher.length - 10})` }}
-                                </v-chip>
-                            </template>
-                        </v-chip-group>
-                    </div>
-                    <!-- 展开的标签从下一行开始显示 -->
-                    <template v-if="filterOptions.publisher.length > 10 && expanded.publisher">
-                        <div class="d-flex align-center mt-1">
-                            <span class="mr-3" />
-                            <v-chip-group
-                                :column="false"
-                                class="flex-grow-1"
-                            >
-                                <v-chip
-                                    v-for="item in filterOptions.publisher.slice(10)"
-                                    :key="item.id"
-                                    :class="filters.publisher === item.name ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                    density="compact"
-                                    label
-                                    small
-                                    @click="updateFilter('publisher', item.name)"
-                                >
-                                    {{ item.name }}
-                                </v-chip>
-                            </v-chip-group>
-                        </div>
-                    </template>
+                <div class="books-container">
+                    <BookCards :books="books" />
                 </div>
 
-                <!-- 作者筛选 -->
-                <div class="mb-2">
-                    <div class="d-flex align-center">
-                        <span class="mr-3">{{ $t('messages.author') }}{{ $t('messages.colon') }}</span>
-                        <v-chip-group
-                            :column="false"
-                            class="flex-grow-1"
-                        >
-                            <v-chip
-                                :class="filters.author === t('messages.all') ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                density="compact"
-                                label
-                                small
-                                @click="updateFilter('author', $t('messages.all'))"
-                            >
-                                {{ $t('messages.all') }}
-                            </v-chip>
-                            <v-chip
-                                v-for="item in filterOptions.author.slice(0, 10)"
-                                :key="item.id"
-                                :class="filters.author === item.name ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                density="compact"
-                                label
-                                small
-                                @click="updateFilter('author', item.name)"
-                            >
-                                {{ item.name }}
-                            </v-chip>
-                            <template v-if="filterOptions.author.length > 10">
-                                <v-chip
-                                    class="filter-chip-more"
-                                    density="compact"
-                                    label
-                                    small
-                                    @click="expanded.author = !expanded.author"
-                                >
-                                    {{ expanded.author ? $t('messages.collapse') : `${$t('messages.more')}(${filterOptions.author.length - 10})` }}
-                                </v-chip>
-                            </template>
-                        </v-chip-group>
-                    </div>
-                    <!-- 展开的标签从下一行开始显示 -->
-                    <template v-if="filterOptions.author.length > 10 && expanded.author">
-                        <div class="d-flex align-center mt-1">
-                            <span class="mr-3" />
-                            <v-chip-group
-                                :column="false"
-                                class="flex-grow-1"
-                            >
-                                <v-chip
-                                    v-for="item in filterOptions.author.slice(10)"
-                                    :key="item.id"
-                                    :class="filters.author === item.name ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                    density="compact"
-                                    label
-                                    small
-                                    @click="updateFilter('author', item.name)"
-                                >
-                                    {{ item.name }}
-                                </v-chip>
-                            </v-chip-group>
-                        </div>
-                    </template>
-                </div>
-
-
-                <!-- 文件格式筛选 -->
-                <div class="mb-3">
-                    <div class="d-flex align-center">
-                        <span class="mr-3">{{ $t('book.format') }}{{ $t('messages.colon') }}</span>
-                        <v-chip-group
-                            :column="false"
-                            class="flex-grow-1"
-                        >
-                            <v-chip
-                                :class="filters.format === t('messages.all') ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                density="compact"
-                                label
-                                small
-                                @click="updateFilter('format', t('messages.all'))"
-                            >
-                                {{ t('messages.all') }}
-                            </v-chip>
-                            <v-chip
-                                v-for="item in filterOptions.format.slice(0, 10)"
-                                :key="item.id"
-                                :class="filters.format === item.name ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                density="compact"
-                                label
-                                small
-                                @click="updateFilter('format', item.name)"
-                            >
-                                {{ item.name }}
-                            </v-chip>
-                            <template v-if="filterOptions.format.length > 10">
-                                <v-chip
-                                    class="filter-chip-more"
-                                    density="compact"
-                                    label
-                                    small
-                                    @click="expanded.format = !expanded.format"
-                                >
-                                    {{ expanded.format ? $t('messages.collapse') : `${$t('messages.more')}(${filterOptions.format.length - 10})` }}
-                                </v-chip>
-                            </template>
-                        </v-chip-group>
-                    </div>
-                    <!-- 展开的标签从下一行开始显示 -->
-                    <template v-if="filterOptions.format.length > 10 && expanded.format">
-                        <div class="d-flex align-center mt-1">
-                            <span class="mr-3" />
-                            <v-chip-group
-                                :column="false"
-                                class="flex-grow-1"
-                            >
-                                <v-chip
-                                    v-for="item in filterOptions.format.slice(10)"
-                                    :key="item.id"
-                                    :class="filters.format === item.name ? 'filter-chip-active' : 'filter-chip-inactive'"
-                                    density="compact"
-                                    label
-                                    small
-                                    @click="updateFilter('format', item.name)"
-                                >
-                                    {{ item.name }}
-                                </v-chip>
-                            </v-chip-group>
-                        </div>
-                    </template>
-                </div>
-            </v-col>
-
-            <v-col>
-                <BookCards :books="books" />
-            </v-col>
-
-            <v-col cols="12">
-                <v-container class="max-width">
+                <v-container class="max-width mt-6">
                     <v-pagination
                         v-if="page_cnt > 0"
                         v-model="page"
                         :length="page_cnt"
-                        circle
+                        rounded="circle"
                         @update:model-value="change_page"
                     />
                 </v-container>
-                <div class="text-xs-center book-pager" />
             </v-col>
         </v-row>
-    </div>
+    </v-container>
 </template>
 
 <script setup>
@@ -261,7 +211,7 @@ const route = useRoute();
 
 store.setNavbar(true);
 
-const title = ref(t('library.title'));
+const title = ref('所有藏書');
 const page = ref(1);
 const books = ref([]);
 const total = ref(0);
@@ -270,17 +220,17 @@ const page_cnt = ref(1);
 const inited = ref(false);
 
 const filters = ref({
-    publisher: t('messages.all'),
-    author: t('messages.all'),
-    tag: t('messages.all'),
-    format: t('messages.all')
+    publisher: '全部',
+    author: '全部',
+    tag: '全部',
+    format: '全部'
 });
 
 const sortBy = ref('timestamp');
 const sortOptions = [
-    { text: '最新入库', value: 'timestamp' },
-    { text: '评分最高', value: 'rating' },
-    { text: '书名 A-Z', value: 'title' },
+    { text: '最新入庫', value: 'timestamp' },
+    { text: '評分最高', value: 'rating' },
+    { text: '書名 A-Z', value: 'title' },
 ];
 
 const filterOptions = ref({
@@ -290,11 +240,26 @@ const filterOptions = ref({
     format: []
 });
 
-const expanded = ref({
-    publisher: false,
-    author: false,
-    tag: false,
-    format: false
+const mobileFilterDrawer = ref(false);
+
+const autocompletePublisherOptions = computed(() => {
+    return ['全部', ...filterOptions.value.publisher.map(p => p.name)];
+});
+const autocompleteAuthorOptions = computed(() => {
+    return ['全部', ...filterOptions.value.author.map(a => a.name)];
+});
+const autocompleteTagOptions = computed(() => {
+    return ['全部', ...filterOptions.value.tag.map(tag => tag.name)];
+});
+const formatOptions = computed(() => {
+    return ['全部', ...filterOptions.value.format.map(f => f.name)];
+});
+
+const hasActiveFilters = computed(() => {
+    return (filters.value.publisher && filters.value.publisher !== '全部') ||
+           (filters.value.author && filters.value.author !== '全部') ||
+           (filters.value.tag && filters.value.tag !== '全部') ||
+           (filters.value.format && filters.value.format !== '全部');
 });
 
 // 监听total变化，动态更新page_cnt
@@ -313,7 +278,7 @@ const fetchBooks = async (p = 1) => {
   
     // 添加筛选条件
     Object.keys(filters.value).forEach(key => {
-        if (filters.value[key] !== t('messages.all')) {
+        if (filters.value[key] !== '全部') {
             query[key] = filters.value[key];
         }
     });
@@ -334,10 +299,10 @@ const fetchBooks = async (p = 1) => {
         total.value = rsp.total || 0;
         page_cnt.value = total.value > 0 ? Math.max(1, Math.ceil(total.value / page_size)) : 0;
         page.value = p;
-        title.value = rsp.title || t('library.title');
+        title.value = rsp.title || '所有藏書';
     } catch (error) {
         console.error('Failed to fetch books:', error);
-        if ($alert) $alert('error', t('library.message.fetchBooksFailed'));
+        if ($alert) $alert('error', '獲取書籍失敗');
     }
 };
 
@@ -368,7 +333,7 @@ const init = async () => {
     // 从URL查询参数中解析筛选条件
     const query = route.query;
     Object.keys(filters.value).forEach(key => {
-        if (query[key] && query[key] !== t('messages.all')) {
+        if (query[key] && query[key] !== '全部') {
             filters.value[key] = query[key];
         }
     });
@@ -389,10 +354,29 @@ const change_page = (newPage) => {
     fetchBooks(newPage);
 };
 
-// 更新筛选
-const updateFilter = (type, value) => {
-    filters.value[type] = value;
-    // 更新筛选条件后重新获取书籍数据，重置到第一页
+// 更新筛选 (Select / Autocomplete bindings)
+const onFilterChange = () => {
+    // Check if null (cleared from autocomplete)
+    if (!filters.value.publisher) filters.value.publisher = '全部';
+    if (!filters.value.author) filters.value.author = '全部';
+    if (!filters.value.tag) filters.value.tag = '全部';
+    if (!filters.value.format) filters.value.format = '全部';
+    
+    fetchBooks(1);
+};
+
+const clearFilter = (type) => {
+    filters.value[type] = '全部';
+    fetchBooks(1);
+};
+
+const clearAllFilters = () => {
+    filters.value = {
+        publisher: '全部',
+        author: '全部',
+        tag: '全部',
+        format: '全部'
+    };
     fetchBooks(1);
 };
 
@@ -409,34 +393,15 @@ onMounted(() => {
 });
 
 useHead(() => ({
-    title: t('library.title')
+    title: '所有藏書'
 }));
 </script>
 
 <style scoped>
-.book-list-legend {
-  margin-top: 6px;
-  margin-bottom: 16px;
+.books-container {
+    min-height: 400px;
 }
-
-.book-pager {
-  margin-top: 30px;
-}
-
-/* 筛选按钮样式 */
-.filter-chip-active {
-  background-color: rgb(var(--v-theme-primary)) !important;
-  color: white !important;
-}
-
-.filter-chip-inactive {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background-color: transparent !important;
-}
-
-.filter-chip-more {
-  border: 1px solid rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-primary)) !important;
-  background-color: transparent !important;
+.bg-grey-lighten-4 {
+    background-color: #f5f5f5;
 }
 </style>

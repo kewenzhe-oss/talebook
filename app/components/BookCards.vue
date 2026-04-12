@@ -7,8 +7,9 @@
                 cols="6"
                 sm="4"
                 md="3"
-                lg="2"
-                class="book-list-card"
+                lg="3"
+                xl="2"
+                class="book-list-card pa-2 pa-sm-3"
             >
                 <v-hover v-slot="{ isHovering, props }">
                     <v-card 
@@ -42,7 +43,7 @@
                                         @click.prevent="openUrl('/read/' + book.id)"
                                     >
                                         <v-icon start size="small">mdi-book-open-page-variant</v-icon>
-                                        {{ $t('common.read') }}
+                                        開始閱讀
                                     </v-btn>
                                     <v-btn
                                         color="white"
@@ -54,7 +55,7 @@
                                         @click.prevent="openUrl(book.href)"
                                     >
                                         <v-icon start size="small">mdi-download</v-icon>
-                                        {{ $t('common.download') }}
+                                        下載
                                     </v-btn>
                                 </div>
                             </v-fade-transition>
@@ -97,10 +98,10 @@
                         mdi-book-open-variant
                     </v-icon>
                     <h3 class="text-h6 grey--text">
-                        {{ $t('messages.noBooks') }}
+                        暫無藏書
                     </h3>
                     <p class="text-caption grey--text">
-                        {{ $t('messages.addBooksFirst') }}
+                        請先新增或匯入書籍
                     </p>
                 </v-card>
             </v-col>

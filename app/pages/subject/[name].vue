@@ -1,27 +1,25 @@
 <template>
     <div>
         <v-row>
-            <v-col cols="12" class="mb-4 d-flex align-center">
-                <v-btn
-                    icon="mdi-arrow-left"
-                    variant="text"
-                    size="small"
-                    class="mr-2"
-                    @click="router.back()"
-                />
-                <p class="text-h5 font-weight-bold ma-0">
-                    {{ title }}
-                </p>
-                <v-spacer />
-                <v-chip
-                    color="primary"
-                    variant="flat"
-                    size="small"
-                    class="ml-3"
-                    v-if="!loading"
-                >
-                    共 {{ allBooks.length }} 本书
-                </v-chip>
+            <v-col cols="12" class="mb-6 d-flex align-start flex-column pl-4">
+                <div class="d-flex align-center">
+                    <v-btn
+                        icon="mdi-arrow-left"
+                        variant="text"
+                        size="small"
+                        class="mr-2"
+                        @click="router.back()"
+                    />
+                    <h1 class="text-h4 font-weight-medium ma-0" style="letter-spacing: 0.05em;">
+                        {{ localizedTitle }}
+                    </h1>
+                    <span class="ml-4 text-subtitle-2 text-grey-darken-1" style="font-weight: 300;" v-if="!loading">
+                        {{ allBooks.length }} 本藏書
+                    </span>
+                </div>
+                <div class="mt-2 ml-10 pl-1">
+                    <p class="text-body-2 text-grey-darken-1 ma-0" style="font-weight: 300;">{{ localizedSubtitle }}</p>
+                </div>
             </v-col>
             
             <v-col cols="12">
@@ -32,11 +30,11 @@
                     <div v-if="hasMore" class="d-flex justify-center mt-6 mb-4">
                         <v-btn
                             color="primary"
-                            variant="tonal"
+                            variant="text"
                             @click="loadMore"
                             :loading="loadingMore"
                         >
-                            加载更多
+                            載入更多
                         </v-btn>
                     </div>
                 </template>
@@ -63,7 +61,38 @@ const route = useRoute();
 const router = useRouter();
 
 const targetSubject = computed(() => route.params.name);
-const title = computed(() => targetSubject.value);
+
+const categoryMap = {
+    'philosophy': { title: '哲學與思想', subtitle: '收錄哲學、邏輯、思想史與相關領域的重要著作' },
+    'history-politics': { title: '歷史與政治', subtitle: '收錄歷史、政治學與社會發展之關鍵論述' },
+    'science-history': { title: '科學史', subtitle: '匯總科學發展里程碑與重要探索紀錄' },
+    'sociology': { title: '社會學', subtitle: '探討社會結構、群體行為與文化現象' },
+    'logic': { title: '邏輯學', subtitle: '收錄邏輯推理與批判性思維相關著作' },
+    'business-management': { title: '商業與管理', subtitle: '涵蓋商業策略、組織管理與領導力經典' },
+    'economics-investment': { title: '經濟與投資', subtitle: '包含總體經濟、個體經濟與投資理財實務' },
+    'genius-madness': { title: '天才與瘋狂', subtitle: '探索人類心智邊界與非凡創造力的故事' },
+    'science': { title: '科學史', subtitle: '匯總科學發展里程碑與重要探索紀錄' },
+    'history': { title: '歷史與政治', subtitle: '收錄歷史、政治學與社會發展之關鍵論述' },
+    'business': { title: '商業與管理', subtitle: '涵蓋商業策略、組織管理與領導力經典' },
+    'economics': { title: '經濟與投資', subtitle: '包含總體經濟、個體經濟與投資理財實務' },
+    '科学史': { title: '科學史', subtitle: '匯總科學發展里程碑與重要探索紀錄' },
+    '天才与疯狂': { title: '天才與瘋狂', subtitle: '探索人類心智邊界與非凡創造力的故事' },
+    '社会学': { title: '社會學', subtitle: '探討社會結構、群體行為與文化現象' },
+    '逻辑学': { title: '邏輯學', subtitle: '收錄邏輯推理與批判性思維相關著作' },
+    '历史与政治': { title: '歷史與政治', subtitle: '收錄歷史、政治學與社會發展之關鍵論述' },
+    '商业与管理': { title: '商業與管理', subtitle: '涵蓋商業策略、組織管理與領導力經典' },
+    '经济与投资': { title: '經濟與投資', subtitle: '包含總體經濟、個體經濟與投資理財實務' }
+};
+
+const localizedTitle = computed(() => {
+    const key = targetSubject.value || '';
+    return categoryMap[key]?.title || categoryMap[key.toLowerCase()]?.title || key;
+});
+
+const localizedSubtitle = computed(() => {
+    const key = targetSubject.value || '';
+    return categoryMap[key]?.subtitle || categoryMap[key.toLowerCase()]?.subtitle || `收錄匯總${localizedTitle.value}之各類館藏經典`;
+});
 
 const allBooks = ref([]);
 const displayBooks = ref([]);
@@ -81,7 +110,7 @@ const hasMore = computed(() => {
 
 store.setNavbar(true);
 useHead({
-    title: () => targetSubject.value
+    title: () => localizedTitle.value
 });
 
 async function fetchCategoryBooks() {

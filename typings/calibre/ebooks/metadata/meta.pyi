@@ -1,0 +1,3 @@
+from typing import Any
+
+def get_metadata(stream: Any, stream_type: Any = ..., use_libprs_metadata: Any = ...) -> Any: ...

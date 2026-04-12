@@ -55,7 +55,7 @@
                     width="300"
                 >
                     <v-card>
-                        <v-card-title>{{ t('book.download') }}</v-card-title>
+                        <v-card-title>下載書籍</v-card-title>
                         <v-card-text>
                             <v-list v-if="book.files && book.files.length > 0">
                                 <v-list-item
@@ -81,7 +81,7 @@
                                 </v-list-item>
                             </v-list>
                             <p v-else>
-                                <br>{{ t('book.noDownloadFormats') }}
+                                <br>暫無支援下載的格式
                             </p>
                         </v-card-text>
                         <v-card-actions>
@@ -90,130 +90,14 @@
                                 variant="text"
                                 @click="dialog_download = false"
                             >
-                                {{ t('common.close') }}
+                                關閉
                             </v-btn>
                             <v-spacer />
                         </v-card-actions>
                     </v-card>
                 </v-dialog>
 
-                <!-- Internet Sync Dialog -->
-                <v-dialog
-                    v-model="dialog_refer"
-                    persistent
-                    width="800"
-                >
-                    <v-card>
-                        <v-toolbar
-                            flat
-                            density="compact"
-                            color="primary"
-                        >
-                            <v-toolbar-title>{{ t('book.internetSync') }}</v-toolbar-title>
-                            <v-spacer />
-                            <v-btn
-                                variant="outlined"
-                                @click="dialog_refer = false"
-                            >
-                                {{ t('common.cancel') }}
-                            </v-btn>
-                        </v-toolbar>
-                        <v-card-text class="pt-4">
-                            <p
-                                v-if="refer_books_loading"
-                                class="py-6 text-center"
-                            >
-                                <v-progress-circular
-                                    indeterminate
-                                    color="primary"
-                                />
-                            </p>
-                            <p
-                                v-else-if="refer_books.length === 0"
-                                class="py-6 text-center"
-                            >
-                                {{ t('book.noMatchingBooks') }}
-                            </p>
-                            <template v-else>
-                                <p class="mb-4">
-                                    {{ t('book.selectMatchingBook') }}
-                                </p>
-                                <BookCards :books="refer_books">
-                                    <template #actions="{ book: referBook }">
-                                        <v-card-actions>
-                                            <v-chip
-                                                v-if="referBook.author_sort"
-                                                class="mr-1"
-                                                size="small"
-                                            >
-                                                {{ referBook.author_sort }}
-                                            </v-chip>
-                                            <v-chip
-                                                v-if="referBook.publisher"
-                                                class="mr-1"
-                                                size="small"
-                                            >
-                                                {{ referBook.publisher }}
-                                            </v-chip>
-                                            <v-chip
-                                                v-if="referBook.pubyear"
-                                                size="small"
-                                            >
-                                                {{ referBook.pubyear }}
-                                            </v-chip>
-                                        </v-card-actions>
-                                        <v-divider />
-                                        <v-card-actions>
-                                            <v-chip
-                                                size="small"
-                                                :href="referBook.website"
-                                                target="_blank"
-                                                :color="referBook.source === '豆瓣' ? 'green' : 'blue'"
-                                            >
-                                                {{ referBook.source }}
-                                            </v-chip>
-                                            <v-spacer />
-                                            <v-menu
-                                                offset-y
-                                                location="right"
-                                            >
-                                                <template #activator="{ props }">
-                                                    <v-btn
-                                                        color="primary"
-                                                        size="small"
-                                                        rounded
-                                                        v-bind="props"
-                                                        :loading="refer_books_setting_btn_loading"
-                                                    >
-                                                        <v-icon size="small">
-                                                            mdi-check
-                                                        </v-icon>
-                                                        {{ t('common.set') }}
-                                                    </v-btn>
-                                                </template>
-                                                <v-list density="compact">
-                                                    <v-list-item @click="set_refer(referBook.provider_key, referBook.provider_value)">
-                                                        <v-list-item-title>{{ t('book.setInfoAndImage') }}</v-list-item-title>
-                                                    </v-list-item>
-                                                    <v-list-item
-                                                        @click="set_refer(referBook.provider_key, referBook.provider_value, { only_meta: 'yes' })"
-                                                    >
-                                                        <v-list-item-title>{{ t('book.setOnlyInfo') }}</v-list-item-title>
-                                                    </v-list-item>
-                                                    <v-list-item
-                                                        @click="set_refer(referBook.provider_key, referBook.provider_value, { only_cover: 'yes' })"
-                                                    >
-                                                        <v-list-item-title>{{ t('book.setOnlyImage') }}</v-list-item-title>
-                                                    </v-list-item>
-                                                </v-list>
-                                            </v-menu>
-                                        </v-card-actions>
-                                    </template>
-                                </BookCards>
-                            </template>
-                        </v-card-text>
-                    </v-card>
-                </v-dialog>
+
 
                 <!-- Main Book Info -->
                 <v-card>
@@ -228,42 +112,40 @@
                         <!-- Primary 1 [立即操作]: 一键进入沉浸式阅读面板 -->
                         <v-btn
                             color="primary"
-                            variant="flat"
+                            variant="elevated"
                             class="mx-1 font-weight-bold"
                             :disabled="book.id === 0"
                             :href="is_txt ? '/book/' + book.id + '/readtxt' : '/read/' + book.id"
                             target="_blank"
                             rounded="pill"
+                            elevation="2"
                         >
                             <v-icon start>mdi-book-open-page-variant</v-icon>
-                            沉浸式阅读
+                            沉浸式閱讀
                         </v-btn>
 
-                        <!-- Primary 2 [深度解析]: 获取洞察包送入 NotebookLM -->
+                        <!-- Primary 2 [深度解析]: 复制 NotebookLM 提示词 -->
                         <v-btn
-                            color="secondary"
-                            variant="flat"
-                            class="mx-1 font-weight-bold"
-                            href="https://notebooklm.google.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            color="primary"
+                            variant="tonal"
+                            class="mx-1 font-weight-medium"
                             rounded="pill"
-                            :title="`下载《${book.title}》后，上传至 NotebookLM 进行 AI 深度分析`"
+                            @click="copyPrompt"
                         >
-                            <v-icon start>mdi-robot-outline</v-icon>
-                            导出并开始 AI 深读
+                            <v-icon v-if="!isCopied" start>mdi-robot-outline</v-icon>
+                            {{ isCopied ? '✓ 已複製' : '✨ 複製 AI 助讀提示詞' }}
                         </v-btn>
 
                         <!-- Primary 3 [常规下载]: 常规打包下载 -->
                         <v-btn
-                            color="grey-darken-3"
-                            variant="flat"
-                            class="mx-1 font-weight-bold text-white"
+                            color="grey-darken-2"
+                            variant="text"
+                            class="mx-1 font-weight-medium"
                             rounded="pill"
                             @click="dialog_download = true"
                         >
                             <v-icon start>mdi-cloud-download</v-icon>
-                            获取源文件
+                            獲取源文件
                         </v-btn>
 
                         <template v-if="book.is_owner">
@@ -281,14 +163,9 @@
                                         <template #prepend>
                                             <v-icon>mdi-cog</v-icon>
                                         </template>
-                                        <v-list-item-title>{{ t('book.editInfo') }}</v-list-item-title>
+                                        <v-list-item-title>編輯書籍資訊</v-list-item-title>
                                     </v-list-item>
-                                    <v-list-item @click="get_refer">
-                                        <template #prepend>
-                                            <v-icon>mdi-apps</v-icon>
-                                        </template>
-                                        <v-list-item-title>{{ t('book.updateFromInternet') }}</v-list-item-title>
-                                    </v-list-item>
+
                                     <v-divider />
                                     <v-list-item @click="delete_book">
                                         <template #prepend>
@@ -296,42 +173,14 @@
                                                 mdi-delete-forever
                                             </v-icon>
                                         </template>
-                                        <v-list-item-title>{{ t('book.deleteBook') }}</v-list-item-title>
+                                        <v-list-item-title>刪除書籍</v-list-item-title>
                                     </v-list-item>
                                 </v-list>
                             </v-menu>
                         </template>
                     </v-toolbar>
 
-                    <!-- AI Deep-Read Guidance -->
-                    <v-expand-transition>
-                        <v-alert
-                            v-if="book.title"
-                            type="info"
-                            variant="tonal"
-                            density="compact"
-                            class="mx-4 mt-3 mb-0 rounded-lg"
-                            icon="mdi-lightbulb-outline"
-                            closable
-                        >
-                            <div class="text-body-2 mb-2">
-                                下载书籍文件后，上传至
-                                <a href="https://notebooklm.google.com" target="_blank" rel="noopener noreferrer" class="font-weight-bold">NotebookLM</a>
-                                即可开始 AI 深度分析。试试这些提问：
-                            </div>
-                            <div class="d-flex flex-wrap ga-2">
-                                <v-chip size="small" variant="outlined" color="primary" prepend-icon="mdi-chat-question-outline">
-                                    《{{ book.title }}》的核心论点是什么？
-                                </v-chip>
-                                <v-chip size="small" variant="outlined" color="primary" prepend-icon="mdi-chat-question-outline">
-                                    用 3 分钟总结《{{ book.title }}》的要点
-                                </v-chip>
-                                <v-chip size="small" variant="outlined" color="primary" prepend-icon="mdi-chat-question-outline">
-                                    《{{ book.title }}》对我的工作有什么启发？
-                                </v-chip>
-                            </div>
-                        </v-alert>
-                    </v-expand-transition>
+
 
                     <v-row>
                         <v-col
@@ -353,109 +202,74 @@
                         >
                             <v-card-text>
                                 <div>
-                                    <p class="text-h5 mb-2">
+                                    <p class="text-h4 font-weight-bold mb-3" style="letter-spacing: 0.02em; line-height: 1.3;">
                                         {{ book.title }}
                                     </p>
-                                    <span class="text-grey">{{ book.author }}著，{{ pub_year }}年版</span>
-                                    <span
-                                        v-if="book.files && book.files.length > 0"
-                                        class="text-grey font-weight-bold"
-                                    >&nbsp;&nbsp;&nbsp;[{{ book.files.map(f => f.format).join(', ') }}<span v-if="book.files[0].size >= 1048576"> - {{ parseInt(book.files[0].size / 1048576) }}MB</span><span v-else-if="book.files[0].size > 0"> - {{ parseInt(book.files[0].size / 1024) }}KB</span>]</span>
+                                    
+                                    <!-- Structured Metadata -->
+                                    <div class="d-flex flex-wrap align-center pa-3 mb-4 rounded-lg border" style="gap: 16px; border-color: rgba(var(--v-theme-on-surface), 0.08) !important;">
+                                        <div class="d-flex align-center">
+                                            <v-icon size="small" color="grey-darken-1" class="mr-1">mdi-account</v-icon>
+                                            <span class="text-subtitle-2 font-weight-bold text-grey-darken-3">{{ book.author }}</span>
+                                        </div>
+                                        <div class="d-flex align-center" v-if="pub_year !== 'N/A'">
+                                            <v-icon size="small" color="grey-darken-1" class="mr-1">mdi-calendar</v-icon>
+                                            <span class="text-subtitle-2 text-grey-darken-3">{{ pub_year }}<span class="d-none d-sm-inline"> 年版</span></span>
+                                        </div>
+                                        <div class="d-flex align-center" v-if="book.publisher">
+                                            <v-icon size="small" color="grey-darken-1" class="mr-1">mdi-domain</v-icon>
+                                            <span class="text-subtitle-2 text-grey-darken-3 w-100 text-truncate" style="max-width: 150px;">{{ book.publisher }}</span>
+                                        </div>
+                                        <div class="d-flex align-center" v-if="book.files && book.files.length > 0">
+                                            <v-icon size="small" color="grey-darken-1" class="mr-1">mdi-file-document</v-icon>
+                                            <span class="text-subtitle-2 font-weight-bold text-primary">{{ book.files.map(f => f.format).join(', ') }}</span>
+                                            <span class="text-caption text-grey ml-1">
+                                                <span v-if="book.files[0].size >= 1048576">({{ parseInt(book.files[0].size / 1048576) }}MB)</span>
+                                                <span v-else-if="book.files[0].size > 0">({{ parseInt(book.files[0].size / 1024) }}KB)</span>
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <v-rating
-                                    v-model="book.rating"
-                                    color="yellow-darken-2"
-                                    length="10"
-                                    readonly
-                                    density="compact"
-                                    size="small"
-                                />
-                                <!-- Tags moved to bottom -->
                             </v-card-text>
-                            <v-card-text>
-                                <p
-                                    v-if="book.comments"
-                                    v-html="book.comments"
-                                />
-                                <p v-else>
-                                    {{ t('book.viewDetails') }}
-                                </p>
+                            <v-card-text class="pt-0">
+                                <!-- Synopsis Clamp Area -->
+                                <div class="text-subtitle-2 font-weight-bold mb-2 mt-2">內容簡介</div>
+                                <div class="synopsis-content text-body-1 text-grey-darken-2" style="line-height: 1.8;">
+                                    <p
+                                        v-if="book.comments"
+                                        v-html="book.comments"
+                                    />
+                                    <p v-else class="text-italic">
+                                        無簡介資料
+                                    </p>
+                                </div>
                             </v-card-text>
                         </v-col>
                     </v-row>
-                    <v-card-text class="text-right book-footer">
-                        <span class="text-grey"> {{ book.collector }} @ {{ book.timestamp }} </span>
-                    </v-card-text>
                 </v-card>
             </v-col>
         </v-row>
 
 
 
-        <!-- Metadata and Tags Section (Moved to bottom) -->
-        <v-row class="mt-4">
+        <!-- Tags Section (Slim Version) -->
+        <v-row class="mt-4" v-if="book.tags && book.tags.length > 0">
             <v-col cols="12">
                 <v-card variant="text">
-                    <v-card-title class="text-subtitle-2 px-0 text-grey font-weight-bold">{{ $t('navigation.tags') }} & {{ $t('navigation.categories') }}</v-card-title>
-                    <v-card-text class="px-0">
-                        <div class="tag-chips">
+                    <v-card-text class="px-0 py-2">
+                        <div class="d-flex align-center flex-wrap ga-2">
+                            <span class="text-caption text-grey font-weight-bold mr-2"><v-icon size="small">mdi-bookshelf</v-icon> 主題分類:</span>
                             <v-chip
-                                v-for="author in book.authors"
-                                :key="'author-' + author"
-                                class="ma-1"
+                                v-for="tag in book.tags.slice(0, 5)"
+                                :key="'tag-' + tag"
                                 size="small"
-                                color="indigo"
-                                :to="'/author/' + encodeURIComponent(author)"
-                                variant="flat"
+                                color="grey-darken-2"
+                                variant="tonal"
+                                :to="'/tag/' + encodeURIComponent(tag)"
                             >
-                                <v-icon start>mdi-account</v-icon>
-                                {{ author }}
+                                {{ tag }}
                             </v-chip>
-                            <v-chip
-                                class="ma-1"
-                                size="small"
-                                color="indigo"
-                                :to="'/publisher/' + encodeURIComponent(book.publisher)"
-                                variant="flat"
-                            >
-                                <v-icon start>mdi-domain</v-icon>
-                                {{ t('book.publisher') }}：{{ book.publisher }}
-                            </v-chip>
-                            <v-chip
-                                v-if="book.series"
-                                class="ma-1"
-                                size="small"
-                                color="indigo"
-                                :to="'/series/' + encodeURIComponent(book.series)"
-                                variant="flat"
-                            >
-                                <v-icon start>mdi-bookshelf</v-icon>
-                                {{ t('book.series') }}: {{ book.series }}
-                            </v-chip>
-                            <v-chip
-                                v-if="book.isbn"
-                                class="ma-1"
-                                size="small"
-                                color="grey"
-                                variant="flat"
-                            >
-                                <v-icon start>mdi-barcode</v-icon>
-                                ISBN：{{ book.isbn }}
-                            </v-chip>
-                            <template v-for="tag in book.tags">
-                                <v-chip
-                                    v-if="tag"
-                                    :key="'tag-' + tag"
-                                    class="ma-1"
-                                    size="small"
-                                    color="grey"
-                                    :to="'/tag/' + encodeURIComponent(tag)"
-                                    variant="flat"
-                                >
-                                    <v-icon start>mdi-tag</v-icon>
-                                    {{ tag }}
-                                </v-chip>
-                            </template>
+                            <span v-if="book.tags.length > 5" class="text-caption text-grey ml-1">+{{ book.tags.length - 5 }}</span>
                         </div>
                     </v-card-text>
                 </v-card>
@@ -501,16 +315,65 @@ const book = ref({
 // Dialogs
 const dialog_download = ref(false);
 const dialog_kindle = ref(false);
-const dialog_refer = ref(false);
 
 // Kindle
 const mail_to = ref('');
 const kindle_sender = ref('');
 
-// Refer books
-const refer_books_loading = ref(false);
-const refer_books_setting_btn_loading = ref(false);
-const refer_books = ref([]);
+// NotebookLM Prompt
+const isCopied = ref(false);
+const getAIPrompt = (bookTitle) => `# Role: 首席閱讀助理與知識萃取專家
+
+# Goal
+你是一位具備頂級結構化思維的書籍分析師。你的任務是深度拆解我提供的文本，並輸出結構嚴謹、邏輯清晰的分析報告。這份報告將直接存入我的個人數位圖書館，並為 NotebookLM 等 RAG 系統進行最佳化。
+
+# Constraints & Output Rules
+- **Target Language**: 所有輸出內容（包含思考過程後的最終報告）必須使用流暢的繁體中文 (Traditional Chinese)。
+- **Source Fidelity**: 嚴格基於提供的文本進行分析，絕不憑空捏造 (No hallucinations)。
+- **Citations**: 必須善用 NotebookLM 的原生引用功能。在每個核心觀點、定義或重要引述後，標註來源以確保可追溯性。
+- **Thinking Process**: 在生成最終報告前，請先使用 <think> 標籤，用英文簡述你的拆解邏輯與全書框架。
+Formatting: 嚴格遵守下方的 Markdown 模板格式，確保乾淨、可直接複製。
+
+---
+
+在完成之後，請嚴格按照以下 6 個模塊輸出繁體中文報告：
+
+書籍基本檔案
+書名：${bookTitle}
+核心分類：[虛構類 Fiction / 非虛構類 Non-Fiction / 技術類 Technical]
+一句話推薦：[高度凝練的 1 句話總結其核心價值，適合用作圖書館索引]
+
+核心論點與寫作意圖
+寫作意圖：[作者為什麼寫這本書？為了解決什麼問題，或挑戰了什麼既定認知？]
+全書主旨：[用 1-2 句話精準概括全書的最核心論點]
+
+表達結構與內容骨架
+全局架構：[宏觀敘事是如何組織的？例如："問題 -> 歸因 -> 解法" 或 "歷史 -> 現狀 -> 未來"]
+脈絡拆解：[用條列式拆解核心章節之間的邏輯關聯]
+
+關鍵知識點與洞察
+(深度萃取 5-7 個書中最具顛覆性或實用價值的概念)
+[概念標題 1]：詳細拆解該概念的運作機制，並結合書中具體案例說明。
+[概念標題 2]：詳細拆解該概念的運作機制，並結合書中具體案例說明。
+(以此類推)
+
+邏輯評估與受眾分析
+論證手法：[作者如何說服讀者？依靠數據、案例還是哲學思辨？]
+護城河與局限：[論證最堅固的地方在哪？是否有時代侷限、預設門檻過高或理論難以落地？]
+精準推薦：[什麼樣背景或面臨什麼困境的人，最應該立刻閱讀此書？]
+
+思想火花與實踐指南
+金句摘錄：[提取 3-5 句最能引發共鳴或深思的原文原話]
+實作與啟發：[對於非虛構類：讀者可以立即採取的行動指南是什麼？對於虛構/哲學類：它帶來了什麼底層世界觀的轉變？]`;
+
+const copyPrompt = () => {
+    const payload = getAIPrompt(book.value.title);
+    navigator.clipboard.writeText(payload);
+    isCopied.value = true;
+    setTimeout(() => {
+        isCopied.value = false;
+    }, 2000);
+};
 
 // TXT
 const txt_parse_inited = ref(false);
@@ -596,7 +459,7 @@ const email_items = computed(() => {
 });
 
 useHead({
-    title: () => book.value.title || t('book.detailsTitle')
+    title: () => book.value.title || '書籍資訊'
 });
 
 // Other methods
@@ -628,53 +491,7 @@ const sendto_kindle = async () => {
     }
 };
 
-const get_refer = async () => {
-    dialog_refer.value = true;
-    refer_books_loading.value = true;
 
-    try {
-        const rsp = await $backend(`/book/${bookid}/refer`);
-        refer_books.value = rsp.books.map((b) => {
-            b.href = '';
-            b.img = '/get/pcover?url=' + encodeURIComponent(b.cover_url);
-            return b;
-        });
-    } catch (e) {
-        console.error(e);
-    } finally {
-        refer_books_loading.value = false;
-    }
-};
-
-const set_refer = async (provider_key, provider_value, opt = {}) => {
-    if (refer_books_setting_btn_loading.value) return;
-
-    refer_books_setting_btn_loading.value = true;
-
-    const data = new URLSearchParams(opt);
-    data.append('provider_key', provider_key);
-    data.append('provider_value', provider_value);
-
-    try {
-        const rsp = await $backend(`/book/${bookid}/refer`, {
-            method: 'POST',
-            body: data,
-        });
-
-        dialog_refer.value = false;
-        if (rsp.err === 'ok') {
-            if ($alert) $alert('success', '设置成功！');
-            router.push(`/book/${bookid}`);
-            location.reload();
-        } else {
-            if ($alert) $alert('error', rsp.msg);
-        }
-    } catch (e) {
-        if ($alert) $alert('error', '设置失败');
-    } finally {
-        refer_books_setting_btn_loading.value = false;
-    }
-};
 
 const delete_book = async () => {
     if (!confirm('确定要删除这本书吗？')) return;
@@ -706,7 +523,8 @@ const check_email = (email) => {
 
 <style scoped>
 .book-img {
-    border-radius: 4px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 .align-right {
@@ -718,12 +536,8 @@ const check_email = (email) => {
     padding-bottom: 3px;
 }
 
-.tag-chips a {
-    margin: 4px 2px;
-}
-
-.tag-chips :deep(.v-chip) {
-    color: white !important;
+.synopsis-content p {
+    margin-bottom: 12px;
 }
 
 /* 减小管理菜单图标和文字的间距 */

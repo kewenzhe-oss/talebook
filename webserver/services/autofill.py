@@ -23,6 +23,9 @@ class AutoFillService(AsyncService):
 
     @AsyncService.register_service
     def auto_fill_all(self, idlist: list, qpm=60):
+        # 2026-04-12: External scraping permanently disabled for data purity.
+        return {"status": "skipped", "message": "External scraping disabled."}
+        
         # 检查是否启用了自动填充书籍信息
         if not CONF['auto_fill_meta']:
             logging.info("自动填充书籍信息已关闭，跳过处理")
@@ -55,6 +58,9 @@ class AutoFillService(AsyncService):
 
     @AsyncService.register_function
     def auto_fill(self, book_id):
+        # 2026-04-12: External scraping permanently disabled for data purity.
+        return {"status": "skipped", "message": "External scraping disabled."}
+
         if not CONF['auto_fill_meta']:
             return
         mi = self.db.get_metadata(book_id, index_is_id=True)
