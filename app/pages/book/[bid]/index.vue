@@ -243,6 +243,26 @@
                                         無簡介資料
                                     </p>
                                 </div>
+
+                                <!-- Guidance Block: Option A (關鍵議題) -->
+                                <div class="mt-6 pa-4 rounded-lg" style="background-color: #f8f9fa; border: 1px solid rgba(var(--v-theme-on-surface), 0.04);" v-if="book.tags && book.tags.length > 0">
+                                    <div class="text-subtitle-2 font-weight-bold mb-3 text-grey-darken-3 d-flex align-center">
+                                        <v-icon size="small" class="mr-1 text-grey-darken-1">mdi-key-variant</v-icon> 關鍵議題
+                                    </div>
+                                    <div class="d-flex flex-wrap ga-2">
+                                        <v-chip
+                                            v-for="tag in book.tags.slice(0, 4)"
+                                            :key="'tag-' + tag"
+                                            size="small"
+                                            color="primary"
+                                            variant="tonal"
+                                            class="font-weight-medium px-3"
+                                            :to="'/tag/' + encodeURIComponent(tag)"
+                                        >
+                                            {{ tag }}
+                                        </v-chip>
+                                    </div>
+                                </div>
                             </v-card-text>
                         </v-col>
                     </v-row>
@@ -252,29 +272,7 @@
 
 
 
-        <!-- Tags Section (Slim Version) -->
-        <v-row class="mt-4" v-if="book.tags && book.tags.length > 0">
-            <v-col cols="12">
-                <v-card variant="text">
-                    <v-card-text class="px-0 py-2">
-                        <div class="d-flex align-center flex-wrap ga-2">
-                            <span class="text-caption text-grey font-weight-bold mr-2"><v-icon size="small">mdi-bookshelf</v-icon> 主題分類:</span>
-                            <v-chip
-                                v-for="tag in book.tags.slice(0, 5)"
-                                :key="'tag-' + tag"
-                                size="small"
-                                color="grey-darken-2"
-                                variant="tonal"
-                                :to="'/tag/' + encodeURIComponent(tag)"
-                            >
-                                {{ tag }}
-                            </v-chip>
-                            <span v-if="book.tags.length > 5" class="text-caption text-grey ml-1">+{{ book.tags.length - 5 }}</span>
-                        </div>
-                    </v-card-text>
-                </v-card>
-            </v-col>
-        </v-row>
+
     </div>
 </template>
 

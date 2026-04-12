@@ -120,17 +120,28 @@ const categories = computed(() => {
 
 const categoryMap = {
     'philosophy': { title: '哲學與思想', subtitle: '哲學、邏輯與思想史' },
+    'psychology': { title: '心理與自我', subtitle: '人格、情緒與自我成長' },
+    'relationship': { title: '關係與家庭', subtitle: '親密關係、溝通與家庭議題' },
+    'literature': { title: '文學與敘事', subtitle: '小說、散文與敘事寫作' },
+    'society': { title: '社會與文化', subtitle: '社會理論、文化觀察與媒介批評' },
+    'technology': { title: '科技與計算', subtitle: '程式設計、AI 與技術思維' },
     'history-politics': { title: '歷史與政治', subtitle: '歷史、政治與社會發展' },
+    'business-management': { title: '商業與管理', subtitle: '商業策略與組織領導' },
+    'economics-investment': { title: '經濟與投資', subtitle: '總體經濟與理財實務' },
     'science-history': { title: '科學史', subtitle: '科學里程碑與探索紀錄' },
     'sociology': { title: '社會學', subtitle: '社會結構與文化現象' },
     'logic': { title: '邏輯學', subtitle: '邏輯推理與批判性思維' },
-    'business-management': { title: '商業與管理', subtitle: '商業策略與組織領導' },
-    'economics-investment': { title: '經濟與投資', subtitle: '總體經濟與理財實務' },
     'genius-madness': { title: '天才與瘋狂', subtitle: '心智邊界與非凡創造力' },
     'science': { title: '科學史', subtitle: '科學里程碑與探索紀錄' },
     'history': { title: '歷史與政治', subtitle: '歷史、政治與社會發展' },
     'business': { title: '商業與管理', subtitle: '商業策略與組織領導' },
     'economics': { title: '經濟與投資', subtitle: '總體經濟與理財實務' },
+    '心理与自我': { title: '心理與自我', subtitle: '人格、情緒與自我成長' },
+    '关系与家庭': { title: '關係與家庭', subtitle: '親密關係、溝通與家庭議題' },
+    '文学与叙事': { title: '文學與敘事', subtitle: '小說、散文與敘事寫作' },
+    '社会与文化': { title: '社會與文化', subtitle: '社會理論、文化觀察與媒介批評' },
+    '科技与计算': { title: '科技與計算', subtitle: '程式設計、AI 與技術思維' },
+    '哲学与思想': { title: '哲學與思想', subtitle: '哲學、邏輯與思想史' },
     '科学史': { title: '科學史', subtitle: '科學里程碑與探索紀錄' },
     '天才与疯狂': { title: '天才與瘋狂', subtitle: '心智邊界與非凡創造力' },
     '社会学': { title: '社會學', subtitle: '社會結構與文化現象' },
@@ -145,7 +156,7 @@ function getLocalizedCatName(id, name) {
 }
 
 function getLocalizedCatSubtitle(id, name) {
-    return categoryMap[id]?.subtitle || categoryMap[name]?.subtitle || categoryMap[name.toLowerCase()]?.subtitle || '分類精選精讀';
+    return categoryMap[id]?.subtitle || categoryMap[name]?.subtitle || categoryMap[name.toLowerCase()]?.subtitle || '相關主題精華典藏';
 }
 
 function doSearch() {
