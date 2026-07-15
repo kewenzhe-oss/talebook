@@ -423,15 +423,28 @@ class BookDownload(BaseHandler, web.StaticFileHandler):
             else:
                 raise web.HTTPError(403, reason=_("无权操作"))
 
+    async def get(self, path: str, include_body: bool = True) -> None:  # type: ignore[override]
+        # PDF.js 会对同一文件发出多个并发 Range 请求（HEAD + 多个 GET Range=bytes=...）。
+        # DB 副作用（user_history / count_increase）只在第一次、无 Range 头的请求时执行，
+        # 避免并发写 SQLite 导致 "database is locked" 从而使首次加载停在 "0 of 0"。
+        range_header = self.request.headers.get("Range", "")
+        if not range_header:
+            filename = path.split("/")[-1]
+            try:
+                bid, _ = filename.split(".")
+                book = self.get_book(bid)
+                self.user_history("download_history", book)
+                self.count_increase(book["id"], count_download=1)
+            except Exception:
+                pass  # 副作用失败不影响文件传输
+        await web.StaticFileHandler.get(self, path, include_body)
+
     def parse_url_path(self, url_path: str) -> str:
         filename = url_path.split("/")[-1]
         bid, fmt = filename.split(".")
         fmt = fmt.lower()
         logging.error("download %s bid=%s, fmt=%s" % (filename, bid, fmt))
         book = self.get_book(bid)
-        book_id = book["id"]
-        self.user_history("download_history", book)
-        self.count_increase(book_id, count_download=1)
         if "fmt_%s" % fmt not in book:
             raise web.HTTPError(404, reason=_("%s格式无法下载" % fmt))
 
@@ -444,8 +457,69 @@ class BookDownload(BaseHandler, web.StaticFileHandler):
             att = 'attachment; filename="%(id)d.%(fmt)s"' % book
 
         self.set_header("Content-Disposition", att.encode("UTF-8"))
-        self.set_header("Content-Type", "application/octet-stream")
+        # 不手动设置 Content-Type：让 StaticFileHandler 根据文件扩展名自动推断，
+        # .PDF/.pdf → application/pdf，确保 PDF.js 能正确识别文件类型。
         return path
+
+    @classmethod
+    def get_absolute_path(cls, root: str, path: str) -> str:
+        return path
+
+
+class BookPDFInline(BaseHandler, web.StaticFileHandler):
+    """PDF 在线阅读专用接口，供 PDF.js viewer 使用。
+
+    与 BookDownload 的区别：
+    - Content-Disposition: inline（而非 attachment），语义为「阅读」
+    - Content-Type: application/pdf（明确指定）
+    - 不记录下载次数（阅读已由 BookRead 计数）
+    - Nginx 对应 location 已关闭 proxy_buffering，实现真正流式传输
+    """
+
+    def initialize(self):
+        self.root = "/"
+        self.default_filename = None
+        BaseHandler.initialize(self)
+
+    def prepare(self):
+        BaseHandler.prepare(self)
+        if not CONF["ALLOW_GUEST_READ"] and not self.current_user:
+            return self.redirect("/login")
+        if self.current_user and not self.current_user.can_read():
+            raise web.HTTPError(403, reason=_("无权在线阅读"))
+
+    async def get(self, book_id: str, include_body: bool = True) -> None:  # type: ignore[override]
+        # PDF.js 会发送多个并发 Range 请求，只在第一个无 Range 头的请求时记录历史
+        range_header = self.request.headers.get("Range", "")
+        if not range_header:
+            try:
+                book = self.get_book(book_id)
+                self.user_history("read_history", book)
+                # 不调用 count_increase：BookRead 已经在跳转前计数了
+            except Exception:
+                pass
+        await web.StaticFileHandler.get(self, book_id, include_body)
+
+    def parse_url_path(self, url_path: str) -> str:
+        book = self.get_book(url_path)
+        if "fmt_pdf" not in book:
+            raise web.HTTPError(404, reason=_("该书无 PDF 格式"))
+
+        pdf_path = book["fmt_pdf"]
+        if not os.path.exists(pdf_path) or not os.access(pdf_path, os.R_OK):
+            logging.error("[BookPDFInline] PDF 文件不存在或不可读: %s", pdf_path)
+            raise web.HTTPError(404, reason=_("PDF 文件不存在，请联系管理员"))
+
+        fname = urllib.parse.quote_plus(
+            "%d-%s.pdf" % (book["id"], book["title"])
+        )
+        # 关键：使用 inline 而非 attachment，PDF.js 及浏览器以「阅读」模式处理流
+        self.set_header(
+            "Content-Disposition",
+            f"inline; filename*=UTF-8''{fname}".encode("UTF-8")
+        )
+        self.set_header("Content-Type", "application/pdf")
+        return pdf_path
 
     @classmethod
     def get_absolute_path(cls, root: str, path: str) -> str:
@@ -534,9 +608,13 @@ class BookNav(ListHandler):
         
         for book in all_books:
             hits = match_book_to_categories(book, categories_config)
+            seen_categories = set()
             for hit in hits:
                 cat_id = hit["category_id"]
-                category_counts[cat_id] = category_counts.get(cat_id, 0) + 1
+                # 针对每本书，每个 category_id 只累加一次 (防止 count(*) 重复计数，实现 COUNT(DISTINCT book_id))
+                if cat_id not in seen_categories:
+                    seen_categories.add(cat_id)
+                    category_counts[cat_id] = category_counts.get(cat_id, 0) + 1
                 
                 if cat_id not in category_counts_tags:
                     category_counts_tags[cat_id] = {}
@@ -773,8 +851,15 @@ class BookRead(BaseHandler):
             if self.current_user and not self.current_user.can_save():
                 raise web.HTTPError(403, reason=_("无权在线阅读PDF类书籍"))
 
+            # P4: 确认 PDF 文件在磁盘上确实存在且可读，避免跳转后 PDF.js 报 404
+            pdf_path = book["fmt_pdf"]
+            if not os.path.exists(pdf_path) or not os.access(pdf_path, os.R_OK):
+                logging.error("[BookRead] PDF文件不存在或不可读: %s", pdf_path)
+                raise web.HTTPError(404, reason=_("PDF文件不存在，请联系管理员"))
+
+            # 指向新的阅读接口（inline 语义，无缓冲，真正流式）而非下载接口
             pdf_url = urllib.parse.quote_plus(
-                self.api_url + "/api/book/%(id)d.PDF" % book
+                self.api_url + "/api/book/%(id)d/pdf" % book
             )
             pdf_reader_url = CONF["PDF_VIEWER"] % {"pdf_url": pdf_url}
             return self.redirect(pdf_reader_url)
@@ -1014,6 +1099,7 @@ def routes():
         (r"/api/book/([0-9]+)", BookDetail),
         (r"/api/book/([0-9]+)/delete", BookDelete),
         (r"/api/book/([0-9]+)/edit", BookEdit),
+        (r"/api/book/([0-9]+)/pdf", BookPDFInline),
         (r"/api/book/([0-9]+\..+)", BookDownload),
         (r"/api/book/([0-9]+)/push", BookPush),
         (r"/api/book/([0-9]+)/refer", BookRefer),

@@ -165,6 +165,60 @@ def match_book_to_categories(book_meta, categories_config):
     """
     返回该书命中的所有分类，以及命中原因。
     """
+    # 12个主分类名称到 ID 的映射
+    MAIN_CATEGORIES = {
+        "哲学与思想": "philosophy",
+        "心理与自我": "psychology",
+        "关系与家庭": "relationship",
+        "文学与叙事": "literature",
+        "历史与政治": "history",
+        "社会与文化": "society",
+        "商业与管理": "business",
+        "经济与投资": "economy",
+        "科技与计算": "technology",
+        "医疗与生命": "health",
+        "艺术与审美": "art",
+        "宗教与灵性": "religion",
+    }
+    
+    # 获取书籍已有的 tags 列表
+    book_tags = []
+    if isinstance(book_meta, dict):
+        book_tags = book_meta.get("tags", [])
+    else:
+        book_tags = getattr(book_meta, "tags", [])
+        if not book_tags:
+            book_tags = []
+            
+    # 检查书籍是否拥有 12 个主分类 tag 之一
+    matched_main_tag = None
+    for tag in book_tags:
+        if tag in MAIN_CATEGORIES:
+            matched_main_tag = tag
+            break
+            
+    # 如果书籍在数据库中已绑定某个主分类 tag，则直接并唯一返回该分类，不进行其它规则匹配
+    if matched_main_tag:
+        target_cat_id = MAIN_CATEGORIES[matched_main_tag]
+        for category in categories_config:
+            if category["id"] == target_cat_id:
+                return [{
+                    "category_id": category["id"],
+                    "category_name": category["name"],
+                    "matched_keyword": matched_main_tag,
+                    "matched_field": "tags",
+                    "rule_id": "db_tag_primary",
+                }]
+        # 兜底：如果配置中找不到对应的分类，仍然返回直接对应的 ID
+        return [{
+            "category_id": target_cat_id,
+            "category_name": matched_main_tag,
+            "matched_keyword": matched_main_tag,
+            "matched_field": "tags",
+            "rule_id": "db_tag_primary_fallback",
+        }]
+
+    # 如果书籍不包含任何 12 个主分类 tag，再使用关键字匹配规则
     results = []
     
     for category in categories_config:

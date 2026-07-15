@@ -20,12 +20,22 @@ export default defineNuxtConfig({
                 themes: {
                     light: {
                         colors: {
-                            primary: '#1976D2',
+                            primary: '#3B82C4',
+                            background: '#F6F6F3',
+                            surface: '#FFFFFF',
+                            'on-background': '#20201D',
+                            'on-surface': '#20201D',
+                            'on-primary': '#FFFFFF',
                         }
                     },
                     dark: {
                         colors: {
-                            primary: '#1976D2',
+                            primary: '#78B9F2',
+                            background: '#141414',
+                            surface: '#212121',
+                            'on-background': '#F4F4F0',
+                            'on-surface': '#F4F4F0',
+                            'on-primary': '#141414',
                         }
                     }
                 }

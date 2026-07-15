@@ -1,11 +1,12 @@
 <template>
     <div>
         <v-app-bar
-            class="px-0"
-            :color="store.theme === 'light' ? 'blue' : undefined"
+            class="px-0 border-subtle-b"
+            color="surface"
             density="compact"
             :theme="store.theme"
             :order="0"
+            flat
         >
             <template
                 v-if="btn_search && display.xs.value"
@@ -18,11 +19,10 @@
                                 <v-text-field
                                     ref="mobile_search"
                                     v-model="search"
-                                    class="ma-0 pa-0"
+                                    class="ma-0 pa-0 custom-header-search"
                                     hide-details
                                     single-line
-                                    variant="solo-inverted"
-                                    :theme="store.theme"
+                                    variant="solo"
                                 />
                             </v-col>
                             <v-col cols="3">
@@ -39,30 +39,28 @@
                     </v-form>
                 </v-container>
             </template>
-
+ 
             <v-app-bar-nav-icon @click.stop="sidebar = !sidebar" />
             <v-toolbar-title
                 class="ml-2 mr-4 align-center"
                 style="cursor: pointer"
                 @click="router.push('/')"
             >
-                {{ store.sys.title }}
+                <span class="mobile-site-title">{{ store.sys.title }}</span>
             </v-toolbar-title>
-
+ 
             <template v-if="display.smAndUp.value && route.path !== '/'">
                 <div class="search-wrapper">
                     <v-text-field
                         ref="search_input"
                         v-model="search"
                         flat
-                        variant="solo-inverted"
+                        variant="solo"
                         hide-details
                         prepend-inner-icon="mdi-magnify"
                         name="name"
-                        label="搜尋..."
-                        class="d-none d-sm-flex search-field"
-                        :theme="store.theme"
-                        :bg-color="store.theme === 'light' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.3)'"
+                        placeholder="搜尋..."
+                        class="d-none d-sm-flex search-field custom-header-search"
                         @keyup.enter="do_search"
                     />
                 </div>
@@ -89,6 +87,7 @@
                             <v-btn
                                 v-bind="props"
                                 icon
+                                class="d-none d-sm-inline-flex"
                             >
                                 <v-icon>mdi-bell</v-icon>
                             </v-btn>
@@ -138,6 +137,7 @@
                     <!-- 主题切换按钮 -->
                     <v-btn
                         icon
+                        class="d-none d-sm-inline-flex"
                         @click="toggleTheme"
                     >
                         <v-icon>{{ store.theme === 'light' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
@@ -218,18 +218,30 @@
                     <!-- 主题切换按钮（未登录状态） -->
                     <v-btn
                         icon
+                        class="d-none d-sm-inline-flex"
                         @click="toggleTheme"
                     >
                         <v-icon>{{ store.theme === 'light' ? 'mdi-weather-night' : 'mdi-weather-sunny' }}</v-icon>
                     </v-btn>
 
+                    <!-- 桌面端显示文字按钮 -->
                     <v-btn
-                        class="login-btn mr-4 text-none font-weight-medium"
+                        class="login-btn mr-4 text-none font-weight-medium d-none d-sm-inline-flex"
                         to="/login"
                         variant="text"
                         :color="store.theme === 'light' ? 'grey-darken-3' : 'grey-lighten-2'"
                     >
                         請登入
+                    </v-btn>
+
+                    <!-- 手机端显示简洁登录图标按钮 -->
+                    <v-btn
+                        class="d-inline-flex d-sm-none mr-2"
+                        icon
+                        to="/login"
+                        aria-label="登入"
+                    >
+                        <v-icon>mdi-login</v-icon>
                     </v-btn>
                 </template>
             </template>
@@ -346,6 +358,86 @@
                         </template>
                     </v-list-item>
                 </template>
+
+                <!-- Mobile only configurations (Theme & Notifications) (PR2) -->
+                <v-divider class="my-2 d-sm-none" />
+                
+                <!-- Notification list item inside drawer (with menu dropdown) -->
+                <v-menu
+                    v-if="messages.length > 0 && store.user.is_login"
+                    offset-y
+                    :close-on-content-click="false"
+                >
+                    <template #activator="{ props }">
+                        <v-list-item
+                            v-bind="props"
+                            prepend-icon="mdi-bell"
+                            title="系統消息"
+                            density="compact"
+                            class="d-sm-none"
+                        >
+                            <template #append>
+                                <v-chip
+                                    size="small"
+                                    color="error"
+                                    variant="flat"
+                                >
+                                    {{ messages.length }}
+                                </v-chip>
+                            </template>
+                        </v-list-item>
+                    </template>
+                    <v-list
+                        lines="three"
+                        density="compact"
+                        width="280"
+                    >
+                        <v-list-item
+                            v-for="(msg, idx) in messages"
+                            :key="msg.id"
+                        >
+                            <template #prepend>
+                                <v-avatar size="24">
+                                    <v-icon
+                                        v-if="msg.status == 'success'"
+                                        size="small"
+                                        color="green"
+                                    >
+                                        mdi-information
+                                    </v-icon>
+                                    <v-icon
+                                        v-else
+                                        size="small"
+                                        color="red"
+                                    >
+                                        mdi-alert
+                                    </v-icon>
+                                </v-avatar>
+                            </template>
+
+                            <v-list-item-title style="white-space: normal; word-break: break-word; font-size: 13px !important; font-weight: normal !important;">
+                                {{ msg.data.message }}
+                            </v-list-item-title>
+                            <v-list-item-subtitle style="font-size: 11px !important;">{{ msg.create_time }}</v-list-item-subtitle>
+
+                            <template #append>
+                                <v-btn size="x-small" variant="outlined" @click.prevent="hidemsg(idx, msg.id)">
+                                    {{ $t('messages.ok') }}
+                                </v-btn>
+                            </template>
+                        </v-list-item>
+                    </v-list>
+                </v-menu>
+
+                <!-- Theme toggle list item inside drawer -->
+                <v-list-item
+                    :prepend-icon="store.theme === 'light' ? 'mdi-weather-night' : 'mdi-weather-sunny'"
+                    :title="store.theme === 'light' ? '切換深色模式' : '切換淺色模式'"
+                    density="compact"
+                    class="d-sm-none"
+                    @click="toggleTheme"
+                />
+
                 <!-- HIDDEN: sidebar extra HTML (QR code etc.) -->
                 <v-list-item
                     v-if="false && store.sys.sidebar_extra_html"
@@ -512,8 +604,8 @@ const items = computed(() => {
         .concat(store.user.is_admin ? admin_links : [])
         .concat(nav_links)
         .concat(store.sys.friends.length > 0 ? friend_links : []);
-        // HIDDEN: sys_links
-        // .concat(store.sys.show_sidebar_sys !== false ? sys_links : []);
+    // HIDDEN: sys_links
+    // .concat(store.sys.show_sidebar_sys !== false ? sys_links : []);
 });
 
 onMounted(() => {
@@ -593,74 +685,133 @@ function toggleTheme() {
 .search-field :deep(.v-input__control) {
     width: 100% !important;
 }
-.search-field :deep(.v-field) {
-    border-radius: 10px !important;
-}
-.search-field :deep(.v-field__overlay) {
-    background-color: transparent !important;
+
+/* Custom Header Search */
+.custom-header-search :deep(.v-field) {
+    background-color: var(--bg-muted) !important;
+    border: 1px solid var(--border-subtle) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    transition: all 0.2s ease !important;
 }
 
-.search-field :deep(.v-field__input) {
-    color: white !important;
+.custom-header-search :deep(.v-field__input) {
+    color: var(--text-primary) !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    font-size: 14px !important;
 }
-.search-field :deep(.v-label) {
-    color: rgba(255, 255, 255, 0.85) !important;
-}
-.search-field :deep(.v-icon) {
-    color: rgba(255, 255, 255, 1) !important;
+
+.custom-header-search :deep(.v-field__input::placeholder) {
+    color: var(--text-tertiary) !important;
     opacity: 1 !important;
 }
-.search-field :deep(.v-field--variant-solo-inverted) {
-    background-color: rgba(255, 255, 255, 0.2) !important;
+
+.custom-header-search :deep(.v-icon) {
+    color: var(--text-tertiary) !important;
+    opacity: 1 !important;
 }
 
-/* 侧边栏字体大小 */
+/* Focus and hover states */
+.custom-header-search :deep(.v-field:hover) {
+    border-color: var(--border-strong) !important;
+}
+
+.custom-header-search :deep(.v-field--focused) {
+    border-color: var(--accent) !important;
+    background-color: var(--bg-surface) !important;
+    box-shadow: 0 0 0 3px var(--focus-ring) !important;
+}
+
+/* Navigation Drawer Override */
+:deep(.v-navigation-drawer) {
+    background-color: var(--bg-sidebar) !important;
+    border-right: 1px solid var(--border-subtle) !important;
+}
+
+/* Sidebar item colors and states */
+:deep(.v-navigation-drawer) .v-list-item {
+    color: var(--text-secondary) !important;
+    border-radius: 8px;
+    margin: 4px 8px;
+    transition: all 0.2s ease;
+}
+
+:deep(.v-navigation-drawer) .v-list-item:hover {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-muted) !important;
+}
+
+/* Sidebar active item */
+:deep(.v-navigation-drawer) .v-list-item--active {
+    color: var(--accent) !important;
+    background-color: var(--accent-soft) !important;
+}
+
+:deep(.v-navigation-drawer) .v-list-item--active .v-list-item__prepend > .v-icon {
+    color: var(--accent) !important;
+    opacity: 1 !important;
+}
+
+:deep(.v-navigation-drawer) .v-list-item__prepend > .v-icon {
+    color: var(--text-secondary) !important;
+    opacity: 0.7 !important;
+}
+
+:deep(.v-navigation-drawer) .v-list-item--active:hover {
+    background-color: var(--accent-soft) !important;
+}
+
+/* Sidebar subheaders */
+:deep(.v-navigation-drawer) .v-list-subheader {
+    color: var(--text-tertiary) !important;
+    font-size: 11px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding-left: 16px;
+    margin-top: 12px;
+    margin-bottom: 4px;
+}
+
+:deep(.v-navigation-drawer) .v-list-subheader__text {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+/* Expand arrows */
+:deep(.v-navigation-drawer) .v-list-group__header .v-list-item__append > .v-icon {
+    color: var(--text-tertiary) !important;
+}
+
+:deep(.v-navigation-drawer) .v-divider {
+    border-color: var(--border-subtle) !important;
+    opacity: 1 !important;
+}
+
+/* Icons, chip, list layout overrides */
 :deep(.v-navigation-drawer) .v-list-item-title {
     font-size: 14px !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
     letter-spacing: 0.02em;
 }
-:deep(.v-navigation-drawer) .v-list-subheader__text {
-    font-size: 12px !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.05em;
-}
+
 :deep(.v-navigation-drawer) .v-list-item--density-compact .v-list-item-title {
     font-size: 14px !important;
-    font-weight: 600 !important;
+    font-weight: 500 !important;
 }
+
 :deep(.v-navigation-drawer) .v-btn__content {
     font-size: 14px !important;
     font-weight: 500 !important;
 }
-/* Icon style */
-:deep(.v-navigation-drawer) .v-list-item__prepend > .v-icon {
-    font-size: 20px !important;
-    opacity: 0.6 !important;
-}
-:deep(.v-navigation-drawer) .v-list-item--active .v-list-item__prepend > .v-icon {
-    opacity: 1 !important;
-}
-/* Count styling */
+
 :deep(.v-navigation-drawer) .v-chip {
     font-weight: 500;
     opacity: 0.8;
     border: none;
     background-color: rgba(var(--v-theme-on-surface), 0.05);
 }
-/* Active state indicator */
-:deep(.v-navigation-drawer) .v-list-item--active::before {
-    content: '';
-    position: absolute;
-    left: -8px;
-    top: 15%;
-    bottom: 15%;
-    width: 4px;
-    background-color: rgb(var(--v-theme-primary));
-    border-radius: 0 4px 4px 0;
-}
 
-/* 侧边栏额外内容居中 */
 :deep(.v-navigation-drawer) .sidebar-extra-item .v-list-item__content {
     display: flex !important;
     justify-content: center !important;
@@ -677,12 +828,10 @@ function toggleTheme() {
     display: block;
 }
 
-/* 侧边栏图标和文字间距 */
 :deep(.v-navigation-drawer) .v-list-item__spacer {
     width: 8px !important;
 }
 
-/* 导航链接样式 */
 :deep(.v-navigation-drawer) .nav-links-item {
     padding-left: 8px;
     padding-right: 8px;
@@ -702,5 +851,19 @@ function toggleTheme() {
     padding-right: 8px;
     width: auto;
     min-width: unset;
+}
+
+.mobile-site-title {
+    display: inline-block;
+}
+@media (max-width: 600px) {
+    .mobile-site-title {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 16px;
+        vertical-align: middle;
+    }
 }
 </style>

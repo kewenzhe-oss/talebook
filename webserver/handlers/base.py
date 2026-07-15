@@ -516,7 +516,15 @@ class BaseHandler(web.RequestHandler):
         return items
 
     def books_by_id(self):
-        sql = "SELECT id FROM books order by id desc"
+        sort_by = self.get_argument("sort", None)
+        if sort_by == "title":
+            sql = "SELECT id FROM books order by sort collate nocase asc, id desc"
+        elif sort_by == "pubdate":
+            sql = "SELECT id FROM books order by pubdate desc, id desc"
+        elif sort_by == "timestamp":
+            sql = "SELECT id FROM books order by timestamp desc, id desc"
+        else:
+            sql = "SELECT id FROM books order by id desc"
         with self._db_lock:
             ids = [v[0] for v in self.cache.backend.conn.get(sql)]
         return ids
@@ -568,10 +576,16 @@ class ListHandler(BaseHandler):
         if ids:
             ids = list(ids)
             count = len(ids)
-            books = self.get_books(ids=ids[start : start + delta])
-            if sort_by_id:
+            current_ids = ids[start : start + delta]
+            books = self.get_books(ids=current_ids)
+            sort_by = self.get_argument("sort", None)
+            if sort_by_id and (not sort_by or sort_by == "timestamp"):
                 # 归一化，按照id从大到小排列。
                 self.do_sort(books, "id", False)
+            else:
+                # 保持传入 ids 列表的顺序 (即经过数据库排序后的顺序)
+                id_map = {id_val: idx for idx, id_val in enumerate(current_ids)}
+                books.sort(key=lambda x: id_map.get(x["id"], 999999))
         else:
             count = len(all_books)
             books = all_books[start : start + delta]

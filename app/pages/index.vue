@@ -1,22 +1,26 @@
 <template>
     <div>
-        <!-- Hero Search -->
-        <v-row class="mt-8 mb-8 justify-center">
-            <v-col cols="12" md="8" class="text-center">
-                <h1 class="text-h3 font-weight-bold mb-3" style="letter-spacing: 0.05em;">探索您的數位書房</h1>
-                <p class="text-subtitle-1 text-grey-darken-1 mb-8" style="font-weight: 300;">依主題整理，為深度閱讀而設計</p>
-                <div class="px-md-10">
-                    <v-text-field
-                        v-model="searchQuery"
-                        prepend-inner-icon="mdi-magnify"
-                        label="搜尋書名、作者、標籤，快速進入閱讀..."
-                        variant="solo"
-                        rounded="pill"
-                        clearable
-                        @keyup.enter="doSearch"
-                        hide-details
-                        class="elevation-2"
-                    ></v-text-field>
+        <!-- Hero Search Section -->
+        <v-row class="hero-search-row justify-center">
+            <v-col cols="12">
+                <div class="hero-card-container">
+                    <div class="hero-card pa-8 pa-sm-12 text-center">
+                        <h1 class="hero-title font-weight-black mb-3">探索您的數位書房</h1>
+                        <p class="hero-subtitle text-grey-darken-1">依主題整理，為深度閱讀而設計</p>
+                        <div class="search-input-wrapper">
+                            <v-text-field
+                                v-model="searchQuery"
+                                prepend-inner-icon="mdi-magnify"
+                                label="搜尋書名、作者、標籤，快速進入閱讀..."
+                                variant="solo"
+                                rounded="pill"
+                                clearable
+                                @keyup.enter="doSearch"
+                                hide-details
+                                class="custom-search-input"
+                            ></v-text-field>
+                        </div>
+                    </div>
                 </div>
             </v-col>
         </v-row>
@@ -38,19 +42,19 @@
         <v-row v-if="categories && categories.length > 0" class="mb-10">
             <v-col cols="12">
                 <div class="mb-5">
-                    <h2 class="text-h5 font-weight-bold mb-1" style="letter-spacing: 0.02em;">精選分類館</h2>
-                    <p class="text-subtitle-2 text-grey-darken-1 mb-0" style="font-weight: 400;">從主題進入你的下一本書</p>
+                    <h2 class="text-h5 font-weight-bold mb-1 text-primary" style="letter-spacing: 0.02em;">精選分類館</h2>
+                    <p class="text-subtitle-2 text-secondary mb-0" style="font-weight: 400;">從主題進入你的下一本書</p>
                 </div>
             </v-col>
             <v-col cols="6" sm="4" md="3" v-for="cat in categories.slice(0, 8)" :key="cat.id">
-                <v-card :to="'/subject/' + encodeURIComponent(cat.id)" class="category-card pa-5 transition-swing" variant="outlined" style="border-width: 1px; border-color: rgba(var(--v-theme-on-surface), 0.12);" hover>
+                <v-card :to="'/subject/' + encodeURIComponent(cat.id)" class="category-card pa-5 transition-swing border-subtle bg-surface" variant="outlined" hover>
                     <div class="d-flex flex-column align-center text-center">
-                        <v-icon size="36" class="mb-3 text-grey-darken-2">{{ cat.icon || 'mdi-bookshelf' }}</v-icon>
-                        <div class="text-subtitle-1 font-weight-bold text-truncate w-100">{{ getLocalizedCatName(cat.id, cat.name) }}</div>
-                        <div v-if="store.sys?.category_counts && store.sys.category_counts[cat.id]" class="text-caption text-grey mt-1">
+                        <v-icon size="36" class="mb-3 text-secondary">{{ cat.icon || 'mdi-bookshelf' }}</v-icon>
+                        <div class="text-subtitle-1 font-weight-bold text-truncate w-100 text-primary">{{ getLocalizedCatName(cat.id, cat.name) }}</div>
+                        <div v-if="store.sys?.category_counts && store.sys.category_counts[cat.id]" class="text-caption text-tertiary mt-1">
                             {{ store.sys.category_counts[cat.id] }} 本藏書
                         </div>
-                        <div v-else class="text-caption text-grey mt-1">
+                        <div v-else class="text-caption text-tertiary mt-1">
                             {{ getLocalizedCatSubtitle(cat.id, cat.name) }}
                         </div>
                     </div>
@@ -172,9 +176,138 @@ function doSearch() {
 }
 .category-card {
     border-radius: 12px;
+    padding: 20px;
 }
 .category-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* Hero Section Styles */
+.hero-search-row {
+    margin-top: 24px;
+    margin-bottom: 40px;
+}
+.hero-card-container {
+    width: 100%;
+}
+.hero-card {
+    background-color: var(--bg-muted);
+    border: 1px solid var(--border-subtle);
+    border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.015);
+    transition: all 0.3s ease;
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    line-height: 1.25;
+    letter-spacing: 0.05em;
+    color: var(--text-primary);
+}
+
+.hero-subtitle {
+    font-size: 1.05rem;
+    font-weight: 300;
+    margin-top: 12px; /* Title to subtitle: 12px */
+    margin-bottom: 28px !important; /* Subtitle to search box: 28px (24px-32px) */
+    color: var(--text-secondary);
+}
+
+.search-input-wrapper {
+    max-width: 640px; /* Limit input width to max-w-2xl equivalent */
+    margin: 0 auto;
+}
+
+/* Custom Search Input override */
+.custom-search-input :deep(.v-field) {
+    background-color: var(--bg-surface-raised) !important;
+    border: 1px solid var(--border-subtle) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Hover state */
+.custom-search-input :deep(.v-field:hover) {
+    border-color: var(--border-strong) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Focus state */
+.custom-search-input :deep(.v-field--focused) {
+    border-color: rgb(var(--v-theme-primary)) !important;
+    box-shadow: 0 4px 20px rgba(var(--v-theme-primary), 0.15) !important;
+}
+
+.custom-search-input :deep(.v-field__input) {
+    font-size: 1.05rem !important;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+}
+
+/* Layout & Spacing */
+.category-row {
+    margin-bottom: 40px;
+}
+.category-header-col {
+    padding-bottom: 20px;
+}
+.category-icon {
+    margin-bottom: 12px;
+}
+.category-card-content {
+    width: 100%;
+}
+.category-card-subtitle {
+    font-size: 0.825rem;
+}
+.section-row {
+    margin-bottom: 40px;
+}
+
+@media (max-width: 600px) {
+    .hero-search-row {
+        margin-top: 12px !important;
+        margin-bottom: 24px !important;
+    }
+    .hero-card {
+        padding: 32px 16px !important;
+        border-radius: 16px !important;
+    }
+    .hero-title {
+        font-size: 1.75rem !important;
+    }
+    .hero-subtitle {
+        font-size: 0.875rem !important;
+        margin-top: 8px !important;
+        margin-bottom: 20px !important;
+    }
+    .category-row {
+        margin-bottom: 24px !important;
+    }
+    .category-header-col {
+        padding-bottom: 8px !important;
+    }
+    .category-card {
+        padding: 12px 8px !important;
+    }
+    .category-icon {
+        font-size: 28px !important;
+        margin-bottom: 8px !important;
+    }
+    .category-card-title {
+        font-size: 14px !important;
+    }
+    .category-card-subtitle {
+        font-size: 11px !important;
+        margin-top: 2px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+    }
+    .section-row {
+        margin-bottom: 24px !important;
+    }
 }
 </style>

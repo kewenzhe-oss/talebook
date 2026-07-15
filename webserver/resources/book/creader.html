@@ -15,18 +15,275 @@
   <link rel="stylesheet" crossorigin href="style.css">
 
   <script src="js/epub-v0.3.88.js"></script>
-  <script  type="module">
-    import { Reader } from "./candle-reader.es.js"
-    new Reader('#app', {
-      debug: false,
-      server: "{{CANDLE_READER_SERVER}}",
-      themes_css: "{{RES}}/static/candle-reader/css/themes.css",
-      book_url: "{{RES}}{{epub_dir}}/",
-      display: "",
-    })
-  </script>
+  
+  <style>
+  #tb-overlay {
+    --bg-color: #FAF9F6;
+    --text-primary: #2C2C2C;
+    --text-secondary: #757575;
+    --border-color: rgba(0, 0, 0, 0.06);
+    --accent-color: #4A6B5D;
+    --btn-secondary-bg: rgba(0, 0, 0, 0.03);
+    --btn-secondary-border: rgba(0, 0, 0, 0.08);
+
+    position: fixed; inset: 0; z-index: 99999;
+    background-color: var(--bg-color);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, sans-serif;
+    transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    user-select: none;
+  }
+  #tb-overlay.dark-theme {
+    --bg-color: #161616;
+    --text-primary: #E0E0E0;
+    --text-secondary: #888888;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --accent-color: #6C8E7F;
+    --btn-secondary-bg: rgba(255, 255, 255, 0.05);
+    --btn-secondary-border: rgba(255, 255, 255, 0.1);
+  }
+  #tb-overlay.tb-hiding { opacity: 0; pointer-events: none; }
+  #tb-overlay.tb-hidden  { display: none; }
+
+  .tb-svg-icon {
+    width: 42px; height: 42px;
+    fill: none; stroke: var(--accent-color);
+    stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+    margin-bottom: 8px;
+    transition: stroke 0.3s;
+  }
+  .tb-book-icon {
+    animation: tb-float 3s ease-in-out infinite;
+  }
+  @keyframes tb-float {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-4px); }
+  }
+
+  .tb-spinner-wrap {
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .tb-spinner {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1.5px solid var(--border-color);
+    border-top-color: var(--accent-color);
+    animation: tb-spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+  @keyframes tb-spin { to { transform: rotate(360deg); } }
+
+  #tb-msg {
+    color: var(--text-primary); font-size: 15px; font-weight: 500;
+    text-align: center; max-width: 320px; line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+  #tb-sub {
+    color: var(--text-secondary); font-size: 13px; font-weight: 400;
+    text-align: center; max-width: 300px; line-height: 1.6;
+    min-height: 20px; letter-spacing: 0.01em;
+  }
+  #tb-progress-wrap {
+    width: 180px; height: 2px;
+    background: var(--border-color); border-radius: 1px;
+    overflow: hidden; display: none; margin-top: 4px;
+  }
+  #tb-progress-bar {
+    height: 100%; width: 0%;
+    background-color: var(--accent-color);
+    transition: width 0.4s ease;
+  }
+  #tb-actions {
+    display: none; gap: 12px; margin-top: 12px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .tb-btn {
+    padding: 8px 18px; border-radius: 20px; cursor: pointer;
+    font-size: 13px; font-weight: 500; border: none;
+    font-family: inherit; letter-spacing: 0.02em;
+    transition: background-color 0.2s, opacity 0.2s, transform 0.15s;
+  }
+  .tb-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .tb-btn:active { transform: translateY(0); }
+  .tb-btn-primary  { background: var(--accent-color); color: var(--bg-color); }
+  .tb-btn-secondary{ background: var(--btn-secondary-bg); color: var(--text-primary);
+                     border: 1px solid var(--btn-secondary-border); }
+  .tb-err-icon { display: none; }
+  .tb-err-icon .tb-svg-icon { stroke: #c0392b; }
+  </style>
 </head>
 <body>
   <div id="app"></div>
+
+  <div id="tb-overlay">
+    <div class="tb-book-icon">
+      <svg class="tb-svg-icon" viewBox="0 0 24 24">
+        <path d="M12 21c-1.2-1.2-3.2-1.5-4.8-1.5H3v-13h4.2c1.2 0 2.8.3 3.8 1.5M12 21c1.2-1.2 3.2-1.5 4.8-1.5H21v-13h-4.2c-1.2 0-2.8.3-3.8 1.5M12 8v13" />
+      </svg>
+    </div>
+    <div class="tb-err-icon" id="tb-err-icon">
+      <svg class="tb-svg-icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+    </div>
+    <div class="tb-spinner-wrap"><div class="tb-spinner"></div></div>
+    <div id="tb-msg">正在調取館藏文檔，請稍候...</div>
+    <div id="tb-sub"></div>
+    <div id="tb-progress-wrap"><div id="tb-progress-bar"></div></div>
+    <div id="tb-actions">
+      <button class="tb-btn tb-btn-primary"   id="tb-btn-retry">重新整理</button>
+      <button class="tb-btn tb-btn-secondary" id="tb-btn-back">返回書籍詳情</button>
+    </div>
+  </div>
+
+  <script type="module">
+    var isReady = {{ "true" if is_ready else "false" }};
+    var bookId = "{{ book.id }}";
+
+    var overlay   = document.getElementById('tb-overlay');
+    var msgEl     = document.getElementById('tb-msg');
+    var subEl     = document.getElementById('tb-sub');
+    var actions   = document.getElementById('tb-actions');
+    var errIcon   = document.getElementById('tb-err-icon');
+    var spinner   = document.querySelector('.tb-spinner-wrap');
+    var bookIcon  = document.querySelector('.tb-book-icon');
+    var progressW = document.getElementById('tb-progress-wrap');
+    var progressB = document.getElementById('tb-progress-bar');
+    var btnRetry  = document.getElementById('tb-btn-retry');
+    var btnBack   = document.getElementById('tb-btn-back');
+
+    /* ── 主題檢測 ── */
+    try {
+      var isDark = false;
+      if (localStorage.getItem('theme') === 'dark' || document.cookie.includes('theme=dark')) {
+        isDark = true;
+      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        isDark = true;
+      }
+      if (isDark) {
+        overlay.classList.add('dark-theme');
+      }
+    } catch (e) {}
+
+    btnBack.onclick = function() {
+      location.href = '/book/' + bookId;
+    };
+    btnRetry.onclick = function() {
+      location.reload();
+    };
+
+    var _done = false;
+    var _errored = false;
+
+    function setMsg(msg, sub) {
+      if (_done) return;
+      msgEl.textContent = msg;
+      if (sub !== undefined) subEl.textContent = sub;
+    }
+
+    function showError(msg, sub) {
+      if (_done) return;
+      _errored = true;
+      spinner.style.display  = 'none';
+      bookIcon.style.display = 'none';
+      errIcon.style.display  = 'block';
+      setMsg(msg, sub || '');
+      actions.style.display = 'flex';
+    }
+
+    function hideOverlay() {
+      if (_done) return;
+      _done = true;
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+      setTimeout(function() {
+        overlay.style.display = 'none';
+      }, 550);
+    }
+
+    function startReader() {
+      import("./candle-reader.es.js").then(function(module) {
+        // Monitor DOM to hide overlay once loaded
+        var appEl = document.getElementById('app');
+        var observer = new MutationObserver(function() {
+          if (appEl.children.length > 0) {
+            hideOverlay();
+            observer.disconnect();
+          }
+        });
+        observer.observe(appEl, { childList: true });
+
+        new module.Reader('#app', {
+          debug: false,
+          server: "{{CANDLE_READER_SERVER}}",
+          themes_css: "{{RES}}/static/candle-reader/css/themes.css",
+          book_url: "{{RES}}{{epub_dir}}/",
+          display: "",
+        });
+      }).catch(function(err) {
+        showError('加載閱讀器組件失敗', '請重新整理或返回詳情頁面');
+      });
+    }
+
+    if (isReady) {
+      setMsg('正在整理書架，準備閱讀...', '即將進入閱讀器...');
+      startReader();
+    } else {
+      setMsg('正在整理館藏文檔...', '正在將書籍版式調整為適合閱讀的 EPUB 格式...');
+      progressW.style.display = 'block';
+      
+      // Start polling
+      var pollInterval = setInterval(function() {
+        // 1. Check if extraction folder is ready
+        fetch("{{RES}}/get/extract/" + bookId + "/META-INF/container.xml")
+          .then(function(res) {
+            if (res.status === 200) {
+              clearInterval(pollInterval);
+              setMsg('書本已備妥，即將載入閱讀器...', '正在翻開書頁...');
+              progressB.style.width = '100%';
+              startReader();
+            } else {
+              // 2. If not ready, poll conversion progress
+              fetch("{{RES}}/get/progress/" + bookId)
+                .then(function(r) { return r.text(); })
+                .then(function(text) {
+                  if (text) {
+                    var match = text.match(/(\d+)%/g);
+                    if (match) {
+                      var lastPct = match[match.length - 1];
+                      var pct = parseInt(lastPct);
+                      progressB.style.width = pct + '%';
+                      setMsg('正在調整書籍版式，以獲得最佳閱讀體驗...', '格式轉碼已完成 ' + pct + '% (首次需要數十秒)');
+                    }
+                    if (text.indexOf('转换失败') !== -1 || text.indexOf('超时') !== -1 || text.indexOf('[FINISH]') !== -1) {
+                      // Check one last time if it actually succeeded despite exit code
+                      fetch("{{RES}}/get/extract/" + bookId + "/META-INF/container.xml")
+                        .then(function(res2) {
+                          if (res2.status !== 200) {
+                            clearInterval(pollInterval);
+                            showError('暫時無法從書架上取得此書', '轉檔超時或失敗，請返回書籍詳情重試');
+                          }
+                        });
+                    }
+                  }
+                })
+                .catch(function() {});
+            }
+          })
+          .catch(function() {});
+      }, 2000);
+      
+      // Timeout guard (3 minutes)
+      setTimeout(function() {
+        if (!_done && !_errored) {
+          clearInterval(pollInterval);
+          showError('載入超時', '書籍體積可能過大或轉碼超時，請嘗試下載原文件閱讀。');
+        }
+      }, 180000);
+    }
+  </script>
 </body>
 </html>

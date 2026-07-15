@@ -429,5 +429,301 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="printContainer"></div>
 
     <input type="file" id="fileInput" class="hidden">
+
+    <!-- talebook: PDF 加载状态 overlay + 自动重试
+         解决问题：
+           1. 首次加载空白（SQLite 写竞争，已由 P1/P2 修复）的兜底重试
+           2. 长时间等待无反馈（"先下载后阅读"链路延迟）的用户体感优化
+         策略：
+           - 立即显示 overlay，分阶段更新文案，让用户知道系统在做什么
+           - 监听 PDF.js eventBus 事件（pagesloaded/pagerendered）获取真实进度
+           - 第一页渲染完成后淡出 overlay
+           - 10s 超时后显示"改为下载"兜底按钮
+           - open() 失败时自动重试一次，仍失败显示错误提示
+    -->
+    <style>
+    #tb-overlay {
+      --bg-color: #FAF9F6;
+      --text-primary: #2C2C2C;
+      --text-secondary: #757575;
+      --border-color: rgba(0, 0, 0, 0.06);
+      --accent-color: #4A6B5D;
+      --btn-secondary-bg: rgba(0, 0, 0, 0.03);
+      --btn-secondary-border: rgba(0, 0, 0, 0.08);
+
+      position: fixed; inset: 0; z-index: 99999;
+      background-color: var(--bg-color);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px;
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, sans-serif;
+      transition: opacity 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+      user-select: none;
+    }
+    #tb-overlay.dark-theme {
+      --bg-color: #161616;
+      --text-primary: #E0E0E0;
+      --text-secondary: #888888;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-color: #6C8E7F;
+      --btn-secondary-bg: rgba(255, 255, 255, 0.05);
+      --btn-secondary-border: rgba(255, 255, 255, 0.1);
+    }
+    #tb-overlay.tb-hiding { opacity: 0; pointer-events: none; }
+    #tb-overlay.tb-hidden  { display: none; }
+
+    .tb-svg-icon {
+      width: 42px; height: 42px;
+      fill: none; stroke: var(--accent-color);
+      stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+      margin-bottom: 8px;
+      transition: stroke 0.3s;
+    }
+    .tb-book-icon {
+      animation: tb-float 3s ease-in-out infinite;
+    }
+    @keyframes tb-float {
+      0%, 100% { transform: translateY(0px); }
+      50%      { transform: translateY(-4px); }
+    }
+
+    .tb-spinner-wrap {
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .tb-spinner {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 1.5px solid var(--border-color);
+      border-top-color: var(--accent-color);
+      animation: tb-spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes tb-spin { to { transform: rotate(360deg); } }
+
+    #tb-msg {
+      color: var(--text-primary); font-size: 15px; font-weight: 500;
+      text-align: center; max-width: 320px; line-height: 1.5;
+      letter-spacing: 0.02em;
+    }
+    #tb-sub {
+      color: var(--text-secondary); font-size: 13px; font-weight: 400;
+      text-align: center; max-width: 300px; line-height: 1.6;
+      min-height: 20px; letter-spacing: 0.01em;
+    }
+    #tb-progress-wrap {
+      width: 180px; height: 2px;
+      background: var(--border-color); border-radius: 1px;
+      overflow: hidden; display: none; margin-top: 4px;
+    }
+    #tb-progress-bar {
+      height: 100%; width: 0%;
+      background-color: var(--accent-color);
+      transition: width 0.4s ease;
+    }
+    #tb-actions {
+      display: none; gap: 12px; margin-top: 12px;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .tb-btn {
+      padding: 8px 18px; border-radius: 20px; cursor: pointer;
+      font-size: 13px; font-weight: 500; border: none;
+      font-family: inherit; letter-spacing: 0.02em;
+      transition: background-color 0.2s, opacity 0.2s, transform 0.15s;
+    }
+    .tb-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .tb-btn:active { transform: translateY(0); }
+    .tb-btn-primary  { background: var(--accent-color); color: var(--bg-color); }
+    .tb-btn-secondary{ background: var(--btn-secondary-bg); color: var(--text-primary);
+                       border: 1px solid var(--btn-secondary-border); }
+    .tb-err-icon { display: none; }
+    .tb-err-icon .tb-svg-icon { stroke: #c0392b; }
+    </style>
+
+    <div id="tb-overlay">
+      <div class="tb-book-icon">
+        <svg class="tb-svg-icon" viewBox="0 0 24 24">
+          <path d="M12 21c-1.2-1.2-3.2-1.5-4.8-1.5H3v-13h4.2c1.2 0 2.8.3 3.8 1.5M12 21c1.2-1.2 3.2-1.5 4.8-1.5H21v-13h-4.2c-1.2 0-2.8.3-3.8 1.5M12 8v13" />
+        </svg>
+      </div>
+      <div class="tb-err-icon" id="tb-err-icon">
+        <svg class="tb-svg-icon" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      </div>
+      <div class="tb-spinner-wrap"><div class="tb-spinner"></div></div>
+      <div id="tb-msg">正在調取館藏文檔，請稍候...</div>
+      <div id="tb-sub"></div>
+      <div id="tb-progress-wrap"><div id="tb-progress-bar"></div></div>
+      <div id="tb-actions">
+        <button class="tb-btn tb-btn-primary"   id="tb-btn-retry">重新整理</button>
+        <button class="tb-btn tb-btn-secondary" id="tb-btn-dl">改為下載</button>
+      </div>
+    </div>
+
+    <script>
+    (function () {
+      'use strict';
+
+      /* ── DOM refs ── */
+      var overlay   = document.getElementById('tb-overlay');
+      var msgEl     = document.getElementById('tb-msg');
+      var subEl     = document.getElementById('tb-sub');
+      var actions   = document.getElementById('tb-actions');
+      var errIcon   = document.getElementById('tb-err-icon');
+      var spinner   = document.querySelector('.tb-spinner-wrap');
+      var bookIcon  = document.querySelector('.tb-book-icon');
+      var progressW = document.getElementById('tb-progress-wrap');
+      var progressB = document.getElementById('tb-progress-bar');
+      var btnRetry  = document.getElementById('tb-btn-retry');
+      var btnDl     = document.getElementById('tb-btn-dl');
+
+      /* ── 主題檢測 ── */
+      try {
+        var isDark = false;
+        if (localStorage.getItem('theme') === 'dark' || document.cookie.includes('theme=dark')) {
+          isDark = true;
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          isDark = true;
+        }
+        if (isDark) {
+          overlay.classList.add('dark-theme');
+        }
+      } catch (e) {}
+
+      /* ── 從 URL 提取原始 file 参数，构造下载链接 ── */
+      var params  = new URLSearchParams(location.search);
+      var pdfFile = params.get('file') || ''; // e.g. /api/book/1/pdf
+      /* 阅读接口 → 下载接口：把 /pdf 结尾换成 .PDF（原下载接口）*/
+      var dlUrl   = pdfFile.replace(/\/pdf$/, '.PDF');
+      btnDl.onclick   = function () { if (dlUrl) location.href = dlUrl; };
+      btnRetry.onclick = function () { location.reload(); };
+
+      /* ── 状态控制 ── */
+      var _done    = false;
+      var _retried = false;
+      var _errored = false;
+
+      function setMsg(msg, sub) {
+        if (_done) return;
+        msgEl.textContent = msg;
+        if (sub !== undefined) subEl.textContent = sub;
+      }
+
+      function showError(msg, sub) {
+        if (_done) return;
+        _errored = true;
+        spinner.style.display  = 'none';
+        bookIcon.style.display = 'none';
+        errIcon.style.display  = 'block';
+        setMsg(msg, sub || '');
+        actions.style.display = 'flex';
+      }
+
+      function hideOverlay() {
+        if (_done) return;
+        _done = true;
+        clearAllTimers();
+        overlay.classList.add('tb-hiding');
+        setTimeout(function () { overlay.classList.add('tb-hidden'); }, 650);
+      }
+
+      /* ── 分阶段文案计时器 ── */
+      var timers = [];
+      function addTimer(ms, fn) { timers.push(setTimeout(fn, ms)); }
+      function clearAllTimers() { timers.forEach(clearTimeout); timers = []; }
+
+      addTimer(1000, function () {
+        setMsg('正在調取館藏文檔，請稍候...');
+      });
+      addTimer(3000, function () {
+        setMsg('正在為您梳理書頁與目錄...', '此藏書體積較大，首次開啟需要一些時間...');
+        progressW.style.display = 'block';
+      });
+      addTimer(10000, function () {
+        setMsg('正在加載文檔，請稍候...', '藏書加載中，若等待過久可選擇下載至本地閱讀');
+        actions.style.display = 'flex';
+      });
+      addTimer(30000, function () {
+        setMsg('仍在努力調取中...', '此藏書體積很大，首次加載可能需要數十秒...');
+      });
+      addTimer(60000, function () {
+        if (!_errored) showError('載入超時', '請檢查您的網路連接，或直接下載原文件閱讀。');
+      });
+
+      /* ── 等 PDF.js 初始化完成后接入 eventBus ── */
+      document.addEventListener('webviewerloaded', function () {
+        var app = window.PDFViewerApplication;
+        if (!app) return;
+
+        app.initializedPromise.then(function () {
+          var bus = app.eventBus;
+
+          if (bus) {
+            /* 文档开始解析 */
+            bus.on('documentinit', function () {
+              setMsg('正在解析書頁結構...');
+            });
+
+            /* 获得总页数 */
+            bus.on('pagesloaded', function (evt) {
+              var total = evt.pagesCount || (app.pdfDocument && app.pdfDocument.numPages) || '?';
+              setMsg('正在載入首頁，即將開啟閱讀...', '共 ' + total + ' 頁');
+              progressW.style.display = 'block';
+              progressB.style.width   = '60%';
+            });
+
+            /* 第 1 页渲染完成 → 隐藏 overlay */
+            bus.on('pagerendered', function (evt) {
+              if (evt.pageNumber === 1) {
+                progressB.style.width = '100%';
+                setTimeout(hideOverlay, 300);
+              }
+            });
+
+            /* 加载进度条 */
+            bus.on('progress', function (evt) {
+              if (evt.loaded && evt.total && evt.total > 0) {
+                var pct = Math.min(Math.round(evt.loaded / evt.total * 55), 55);
+                progressB.style.width = pct + '%';
+                if (evt.loaded > 1024) {
+                  setMsg('正在接收藏書數據...', Math.round(evt.loaded / 1024) + ' KB / ' + Math.round(evt.total / 1024) + ' KB');
+                }
+              }
+            });
+
+            /* 加载失败 */
+            bus.on('documentloaderror', function () {
+              showError('暫時無法從書架上取得此書', '請稍後重試，或將原文件下載至本地閱讀');
+            });
+          }
+
+          /* ── 包装 open()：失败时自动重试一次 ── */
+          var origOpen = app.open.bind(app);
+          app.open = async function (args) {
+            setMsg('正在調取館藏文檔，請稍候...');
+            try {
+              return await origOpen(args);
+            } catch (err) {
+              if (!_retried) {
+                _retried = true;
+                setMsg('初次載入遇到阻礙，正在重新調取...', '');
+                console.warn('[talebook] PDF 首次加载失败，1500ms 后自动重试:', err && err.message);
+                await new Promise(function (r) { setTimeout(r, 1500); });
+                try {
+                  return await origOpen(args);
+                } catch (err2) {
+                  showError('暫時無法從書架上取得此書', '請稍後重試，或將原文件下載至本地閱讀');
+                  throw err2;
+                }
+              }
+              showError('暫時無法從書架上取得此書', '請稍後重試，或將原文件下載至本地閱讀');
+              throw err;
+            }
+          };
+        });
+      });
+    })();
+    </script>
   </body>
 </html>

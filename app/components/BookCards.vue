@@ -61,11 +61,11 @@
                             </v-fade-transition>
                         </v-img>
                         <v-card-text class="d-flex flex-column pa-3 flex-grow-1 text-center">
-                            <div class="book-title mb-1 text-subtitle-1 font-weight-bold text-left" :title="book.title">
+                            <div class="book-title mb-1 text-subtitle-1 font-weight-bold text-left text-primary" :title="book.title">
                                 {{ book.title }}
                             </div>
                             <div class="d-flex align-center justify-space-between w-100 mt-auto px-1" style="min-width: 0;">
-                                <div class="text-caption text-grey text-truncate text-left flex-grow-1 mr-2" style="min-width: 0;" :title="book.author">
+                                <div class="text-caption text-secondary text-truncate text-left flex-grow-1 mr-2" style="min-width: 0;" :title="book.author">
                                     {{ book.author }}
                                 </div>
                                 <v-chip
@@ -90,17 +90,17 @@
             class="empty-state"
         >
             <v-col cols="12">
-                <v-card class="ma-1 pa-6 text-center">
+                <v-card class="ma-1 pa-6 text-center bg-surface border-subtle elevation-1">
                     <v-icon
                         large
-                        color="grey lighten-2"
+                        class="text-tertiary mb-2"
                     >
                         mdi-book-open-variant
                     </v-icon>
-                    <h3 class="text-h6 grey--text">
+                    <h3 class="text-h6 text-secondary font-weight-bold mb-1">
                         暫無藏書
                     </h3>
-                    <p class="text-caption grey--text">
+                    <p class="text-caption text-tertiary">
                         請先新增或匯入書籍
                     </p>
                 </v-card>
@@ -146,5 +146,21 @@ const openUrl = (url) => {
 }
 .bg-grey-lighten-2 {
     background-color: #e0e0e0;
+}
+
+@media (max-width: 600px) {
+    .book-title {
+        font-size: 0.875rem !important; /* text-subtitle-2 equivalent */
+        line-height: 1.3em !important;
+        height: 2.6em !important;
+    }
+    .book-list-card .text-caption.text-grey {
+        opacity: 0.85;
+    }
+    .book-list-card :deep(.v-chip) {
+        font-size: 10px !important;
+        height: 20px !important;
+        padding: 0 6px !important;
+    }
 }
 </style>

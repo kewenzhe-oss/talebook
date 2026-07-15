@@ -132,16 +132,16 @@
                             <h2 class="text-h5 font-weight-bold mr-3" style="letter-spacing: 0.02em;">
                                 {{ title }}
                             </h2>
-                            <span class="text-subtitle-1 text-grey-darken-1" v-if="total > 0">
+                            <span class="text-subtitle-1 text-secondary" v-if="total > 0">
                                 · 找到 {{ total }} 本結果
                             </span>
-                            <span class="text-subtitle-1 text-grey-darken-1" v-else-if="total === 0 && inited">
+                            <span class="text-subtitle-1 text-secondary" v-else-if="total === 0 && inited">
                                 · 0 本結果
                             </span>
                         </div>
                         
                         <div class="d-flex align-center mt-3 mt-md-0">
-                            <span class="text-caption text-grey-darken-1 mr-2 d-none d-md-block">排序方式</span>
+                            <span class="text-caption text-secondary mr-2 d-none d-md-block">排序方式</span>
                             <v-select
                                 v-model="sortBy"
                                 :items="sortOptions"
@@ -159,43 +159,43 @@
                     </div>
 
                     <!-- Active Filters Row -->
-                    <div v-if="hasActiveFilters" class="d-flex flex-wrap align-center ga-2 pt-3 mt-3" style="border-top: 1px dashed rgba(var(--v-theme-on-surface), 0.12);">
-                        <span class="text-caption text-grey-darken-1 mr-1">篩選條件：</span>
+                    <div v-if="hasActiveFilters" class="d-flex flex-wrap align-center ga-2 pt-3 mt-3" style="border-top: 1px dashed var(--border-subtle);">
+                        <span class="text-caption text-secondary mr-1">篩選條件：</span>
                         
-                        <v-chip closable size="small" color="grey-darken-3" variant="tonal" class="font-weight-medium"
+                        <v-chip closable size="small" color="primary" variant="tonal" class="font-weight-medium"
                                 v-if="filters.publisher && filters.publisher !== '全部'" 
                                 @click:close="clearFilter('publisher')">
                             出版社: {{ filters.publisher }}
                         </v-chip>
                         
-                        <v-chip closable size="small" color="grey-darken-3" variant="tonal" class="font-weight-medium"
+                        <v-chip closable size="small" color="primary" variant="tonal" class="font-weight-medium"
                                 v-if="filters.author && filters.author !== '全部'" 
                                 @click:close="clearFilter('author')">
                             作者: {{ filters.author }}
                         </v-chip>
 
-                        <v-chip closable size="small" color="grey-darken-3" variant="tonal" class="font-weight-medium"
+                        <v-chip closable size="small" color="primary" variant="tonal" class="font-weight-medium"
                                 v-if="filters.tag && filters.tag !== '全部'" 
                                 @click:close="clearFilter('tag')">
                             標籤: {{ filters.tag }}
                         </v-chip>
 
-                        <v-chip closable size="small" color="grey-darken-3" variant="tonal" class="font-weight-medium"
+                        <v-chip closable size="small" color="primary" variant="tonal" class="font-weight-medium"
                                 v-if="filters.format && filters.format !== '全部'" 
                                 @click:close="clearFilter('format')">
                             格式: {{ filters.format }}
                         </v-chip>
 
-                        <v-btn variant="text" size="small" color="grey-darken-1" class="ml-auto px-2" @click="clearAllFilters">清除全部</v-btn>
+                        <v-btn variant="text" size="small" class="ml-auto px-2 text-secondary" @click="clearAllFilters">清除全部</v-btn>
                     </div>
                 </div>
 
                 <div class="books-container">
-                    <div v-if="total === 0 && inited" class="text-center pa-10 mt-6 rounded-lg bg-surface" style="border: 1px dashed rgba(var(--v-theme-on-surface), 0.12);">
-                        <v-icon size="48" class="mb-4 text-grey-lighten-1">mdi-bookshelf</v-icon>
-                        <div class="text-h6 text-grey-darken-2 mb-2">目前沒有符合條件的書籍</div>
-                        <div class="text-body-2 text-grey">試著移除部分篩選條件，或探索其他分類。</div>
-                        <v-btn v-if="hasActiveFilters" variant="outlined" color="grey-darken-2" class="mt-6 font-weight-medium" @click="clearAllFilters">清除全部篩選</v-btn>
+                    <div v-if="total === 0 && inited" class="text-center pa-10 mt-6 rounded-lg bg-surface" style="border: 1px dashed var(--border-strong);">
+                        <v-icon size="48" class="mb-4 text-tertiary">mdi-bookshelf</v-icon>
+                        <div class="text-h6 text-secondary mb-2">目前沒有符合條件的書籍</div>
+                        <div class="text-body-2 text-tertiary">試著移除部分篩選條件，或探索其他分類。</div>
+                        <v-btn v-if="hasActiveFilters" variant="outlined" color="primary" class="mt-6 font-weight-medium" @click="clearAllFilters">清除全部篩選</v-btn>
                     </div>
                     <BookCards v-else :books="books" />
                 </div>

@@ -177,32 +177,44 @@
 
         <div class="content-area">
             <v-container>
-                <v-card
+                <div
                     v-if="!inited"
-                    variant="outlined"
-                    width="300"
-                    style="margin: 0 auto"
+                    class="study-txt-prep pa-8 rounded-lg text-center mx-auto mt-12"
+                    style="max-width: 420px; border: 1px solid rgba(var(--v-theme-on-surface), 0.08); background-color: rgb(var(--v-theme-surface));"
                 >
-                    <v-card-title ref="tipTitle">
+                    <div class="tb-book-icon-wrap mb-5 text-grey-darken-2">
+                        <svg viewBox="0 0 24 24" style="width: 42px; height: 42px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; display: inline-block;">
+                            <path d="M12 21c-1.2-1.2-3.2-1.5-4.8-1.5H3v-13h4.2c1.2 0 2.8.3 3.8 1.5M12 21c1.2-1.2 3.2-1.5 4.8-1.5H21v-13h-4.2c-1.2 0-2.8.3-3.8 1.5M12 8v13" />
+                        </svg>
+                    </div>
+                    <div class="text-subtitle-1 font-weight-bold mb-2 text-grey-darken-4" style="letter-spacing: 0.02em;">
                         {{ tip.title }}
-                    </v-card-title>
-                    <v-card-text>
+                    </div>
+                    <div class="text-body-2 text-grey-darken-1 mb-4" style="line-height: 1.6; letter-spacing: 0.01em;">
                         {{ tip.content }}
-                    </v-card-text>
-                </v-card>
+                    </div>
+                    <v-progress-linear
+                        color="grey-darken-1"
+                        indeterminate
+                        height="2"
+                        class="mx-auto rounded-pill"
+                        style="max-width: 160px;"
+                    />
+                </div>
                 <div v-else>
                     <div
                         v-if="loading"
-                        class="d-flex justify-center align-content-center"
-                        style="margin-bottom: 20px"
+                        class="d-flex flex-column align-center justify-center py-12 text-center"
+                        style="color: rgba(var(--v-theme-on-surface), 0.6);"
                     >
-                        <v-progress-circular
-                            color="primary"
+                        <v-progress-linear
+                            color="grey-darken-1"
                             indeterminate
-                            size="28"
-                            style="margin-right: 10px"
+                            height="1"
+                            class="mb-4 rounded-pill"
+                            style="max-width: 100px;"
                         />
-                        {{ t('book.loading') }}
+                        <span class="text-caption" style="letter-spacing: 0.05em;">正在調取書頁...</span>
                     </div>
                     <div
                         v-show="!loading"

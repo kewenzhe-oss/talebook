@@ -104,8 +104,8 @@
                     <v-toolbar
                         flat
                         density="compact"
-                        :color="store.theme === 'light' ? 'white' : 'grey-darken-4'"
-                        class="px-2"
+                        color="transparent"
+                        class="px-2 bg-surface border-subtle-b"
                     >
                         <v-spacer />
 
@@ -127,7 +127,7 @@
                         <!-- Primary 2 [深度解析]: 复制 NotebookLM 提示词 -->
                         <v-btn
                             color="primary"
-                            variant="tonal"
+                            variant="outlined"
                             class="mx-1 font-weight-medium"
                             rounded="pill"
                             @click="copyPrompt"
@@ -138,9 +138,8 @@
 
                         <!-- Primary 3 [常规下载]: 常规打包下载 -->
                         <v-btn
-                            color="grey-darken-2"
                             variant="text"
-                            class="mx-1 font-weight-medium"
+                            class="mx-1 font-weight-medium text-secondary"
                             rounded="pill"
                             @click="dialog_download = true"
                         >
@@ -202,28 +201,28 @@
                         >
                             <v-card-text>
                                 <div>
-                                    <p class="text-h4 font-weight-bold mb-3" style="letter-spacing: 0.02em; line-height: 1.3;">
+                                    <p class="text-h4 font-weight-bold mb-3 text-primary" style="letter-spacing: 0.02em; line-height: 1.3;">
                                         {{ book.title }}
                                     </p>
                                     
                                     <!-- Structured Metadata -->
-                                    <div class="d-flex flex-wrap align-center pa-3 mb-4 rounded-lg border" style="gap: 16px; border-color: rgba(var(--v-theme-on-surface), 0.08) !important;">
+                                    <div class="book-metadata-box d-flex flex-wrap align-center pa-3 mb-4 rounded-lg bg-muted border-subtle">
                                         <div class="d-flex align-center">
-                                            <v-icon size="small" color="grey-darken-1" class="mr-1">mdi-account</v-icon>
-                                            <span class="text-subtitle-2 font-weight-bold text-grey-darken-3">{{ book.author }}</span>
+                                            <v-icon size="small" class="mr-1 text-tertiary">mdi-account</v-icon>
+                                            <span class="text-subtitle-2 font-weight-bold text-secondary">{{ book.author }}</span>
                                         </div>
                                         <div class="d-flex align-center" v-if="pub_year !== 'N/A'">
-                                            <v-icon size="small" color="grey-darken-1" class="mr-1">mdi-calendar</v-icon>
-                                            <span class="text-subtitle-2 text-grey-darken-3">{{ pub_year }}<span class="d-none d-sm-inline"> 年版</span></span>
+                                            <v-icon size="small" class="mr-1 text-tertiary">mdi-calendar</v-icon>
+                                            <span class="text-subtitle-2 text-secondary">{{ pub_year }}<span class="d-none d-sm-inline"> 年版</span></span>
                                         </div>
                                         <div class="d-flex align-center" v-if="book.publisher">
-                                            <v-icon size="small" color="grey-darken-1" class="mr-1">mdi-domain</v-icon>
-                                            <span class="text-subtitle-2 text-grey-darken-3 w-100 text-truncate" style="max-width: 150px;">{{ book.publisher }}</span>
+                                            <v-icon size="small" class="mr-1 text-tertiary">mdi-domain</v-icon>
+                                            <span class="text-subtitle-2 text-secondary w-100 text-truncate" style="max-width: 150px;">{{ book.publisher }}</span>
                                         </div>
                                         <div class="d-flex align-center" v-if="book.files && book.files.length > 0">
-                                            <v-icon size="small" color="grey-darken-1" class="mr-1">mdi-file-document</v-icon>
-                                            <span class="text-subtitle-2 font-weight-bold text-primary">{{ book.files.map(f => f.format).join(', ') }}</span>
-                                            <span class="text-caption text-grey ml-1">
+                                            <v-icon size="small" class="mr-1 text-tertiary">mdi-file-document</v-icon>
+                                            <span class="text-subtitle-2 font-weight-bold text-accent">{{ book.files.map(f => f.format).join(', ') }}</span>
+                                            <span class="text-caption text-tertiary ml-1">
                                                 <span v-if="book.files[0].size >= 1048576">({{ parseInt(book.files[0].size / 1048576) }}MB)</span>
                                                 <span v-else-if="book.files[0].size > 0">({{ parseInt(book.files[0].size / 1024) }}KB)</span>
                                             </span>
@@ -233,21 +232,21 @@
                             </v-card-text>
                             <v-card-text class="pt-0">
                                 <!-- Synopsis Clamp Area -->
-                                <div class="text-subtitle-2 font-weight-bold mb-2 mt-2">內容簡介</div>
-                                <div class="synopsis-content text-body-1 text-grey-darken-2" style="line-height: 1.8;">
+                                <div class="text-subtitle-1 font-weight-bold text-primary mb-2 mt-2">內容簡介</div>
+                                <div class="synopsis-content text-body-1 text-secondary" style="line-height: 1.8;">
                                     <p
                                         v-if="book.comments"
                                         v-html="book.comments"
                                     />
-                                    <p v-else class="text-italic">
+                                    <p v-else class="text-italic text-tertiary">
                                         無簡介資料
                                     </p>
                                 </div>
 
                                 <!-- Guidance Block: Option A (關鍵議題) -->
-                                <div class="mt-6 pa-4 rounded-lg" style="background-color: #f8f9fa; border: 1px solid rgba(var(--v-theme-on-surface), 0.04);" v-if="book.tags && book.tags.length > 0">
-                                    <div class="text-subtitle-2 font-weight-bold mb-3 text-grey-darken-3 d-flex align-center">
-                                        <v-icon size="small" class="mr-1 text-grey-darken-1">mdi-key-variant</v-icon> 關鍵議題
+                                <div class="mt-6 pa-4 rounded-lg bg-muted border-subtle" v-if="book.tags && book.tags.length > 0">
+                                    <div class="text-subtitle-2 font-weight-bold mb-3 text-secondary d-flex align-center">
+                                        <v-icon size="small" class="mr-1 text-tertiary">mdi-key-variant</v-icon> 關鍵議題
                                     </div>
                                     <div class="d-flex flex-wrap ga-2">
                                         <v-chip
@@ -541,5 +540,16 @@ const check_email = (email) => {
 /* 减小管理菜单图标和文字的间距 */
 :deep(.v-list-item__spacer) {
     width: 8px !important;
+}
+
+.book-metadata-box {
+    gap: 16px;
+}
+
+@media (max-width: 600px) {
+    .book-metadata-box {
+        gap: 8px 12px !important;
+        padding: 10px !important;
+    }
 }
 </style>
