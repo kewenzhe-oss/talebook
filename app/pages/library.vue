@@ -244,7 +244,7 @@ const filters = ref({
 const sortBy = ref('timestamp');
 const sortOptions = [
     { text: '最新入庫', value: 'timestamp' },
-    { text: '評分最高', value: 'rating' },
+    { text: '出版年份', value: 'pubdate' },
     { text: '書名 A-Z', value: 'title' },
 ];
 
