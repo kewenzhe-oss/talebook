@@ -236,7 +236,7 @@
                                 <div class="synopsis-content text-body-1 text-secondary" style="line-height: 1.8;">
                                     <p
                                         v-if="book.comments"
-                                        v-html="book.comments"
+                                        v-html="formattedComments"
                                     />
                                     <p v-else class="text-italic text-tertiary">
                                         無簡介資料
@@ -439,6 +439,24 @@ const pub_year = computed(() => {
         return 'N/A';
     }
     return book.value.pubdate.split('-')[0];
+});
+
+const formattedComments = computed(() => {
+    const val = book.value.comments;
+    if (!val) return '';
+    
+    // Check if it has HTML tags
+    const hasHtml = /<[a-z][\s\S]*>/i.test(val);
+    if (hasHtml) {
+        return val;
+    }
+    
+    // Escape HTML and replace \n with <br>
+    return val
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>');
 });
 
 const is_txt = computed(() => {
