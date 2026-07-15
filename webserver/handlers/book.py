@@ -1074,7 +1074,7 @@ class CategoryBooks(ListHandler):
             if "id" not in book: continue
             
             hits = match_book_to_categories(book, [target_cat])
-            if hits:
+            if any(h["category_id"] == target_cat["id"] for h in hits):
                 matched_books.append(book)
                 
         total = len(matched_books)
